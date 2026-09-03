@@ -1,0 +1,7 @@
+{
+  "source_type": "drugbank_id",
+  "id": "DB00338",
+  "template": "drugbox",
+  "unsupported": true,
+  "error": "DrugBank/drugbox lookup is currently unsupported because DrugBank no longer provides unauthenticated public lookup data suitable for this tool."
+}

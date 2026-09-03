@@ -1,0 +1,10 @@
+{
+  "source_type": "pubmedcentral_id",
+  "id": "137841",
+  "template": "cite journal",
+  "options": {
+    "add_accessdate": 0,
+    "add_param_space": 1
+  },
+  "output": "{{cite journal | vauthors = Dworkin J, Losick R | title = Does RNA polymerase help drive chromosome segregation in bacteria? | journal = Proc Natl Acad Sci U S A | volume = 99 | issue = 22 | pages = 14089–94 | date = October 2002 | pmid = 12384568 | pmc = 137841 | doi = 10.1073/pnas.182539899 | url = }}"
+}

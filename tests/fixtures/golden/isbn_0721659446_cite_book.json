@@ -1,0 +1,10 @@
+{
+  "source_type": "isbn",
+  "id": "0721659446",
+  "template": "cite book",
+  "options": {
+    "add_accessdate": 0,
+    "add_param_space": 1
+  },
+  "output": "{{cite book | vauthors = Guyton AC, Hall JE | title = Textbook of medical physiology | publisher = W.B. Saunders | location = Philadelphia | year = 1996 | pages = 1148 | isbn = 0721659446 | oclc = 31378424 | doi = | accessdate = }}"
+}

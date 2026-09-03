@@ -1,0 +1,9 @@
+{
+  "source_type": "hgnc_id",
+  "id": "HGNC:1582",
+  "template": "infobox protein",
+  "options": {
+    "add_param_space": 1
+  },
+  "output": "{{infobox protein\n| name = cyclin D1\n| caption = \n| image = \n| width = \n| HGNCid = 1582\n| Symbol = CCND1\n| AltSymbols = BCL1, D11S287E, PRAD1\n| EntrezGene = 595\n| OMIM = 168461\n| RefSeq = NM_053056\n| UniProt = P24385\n| PDB = \n| ECnumber = \n| Chromosome = 11\n| Arm = q\n| Band = 13.3\n| LocusSupplementaryData = \n}}"
+}
