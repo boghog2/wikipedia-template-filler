@@ -5,7 +5,6 @@ from unittest import mock
 
 import wikipedia_template_filler
 from wikipedia_template_filler import (
-    NotImplementedSourceError,
     TemplateFiller,
     UnknownSourceError,
     UnsupportedSourceError,
@@ -18,9 +17,13 @@ class PackageTests(unittest.TestCase):
     def test_version_is_available(self):
         self.assertEqual(wikipedia_template_filler.__version__, "0.1.0")
 
-    def test_fill_placeholder_is_explicit_for_pending_sources(self):
-        with self.assertRaisesRegex(NotImplementedSourceError, "hgnc_id.*infobox protein.*not implemented"):
-            fill("hgnc_id", "HGNC:1582")
+    def test_source_statuses_are_current(self):
+        filler = TemplateFiller()
+        self.assertEqual(filler.source_spec("pmid").status, "supported")
+        self.assertEqual(filler.source_spec("pmc").status, "supported")
+        self.assertEqual(filler.source_spec("hgnc").status, "supported")
+        self.assertEqual(filler.source_spec("isbn").status, "supported")
+        self.assertEqual(filler.source_spec("drugbank").status, "unsupported")
 
     def test_template_filler_normalizes_source_aliases(self):
         filler = TemplateFiller()
@@ -86,11 +89,13 @@ class PackageTests(unittest.TestCase):
         self.assertIn("DrugBank/drugbox lookup is currently unsupported", stderr.getvalue())
 
     def test_cli_accepts_renderer_options_for_api_calls(self):
-        stderr = io.StringIO()
-        with contextlib.redirect_stderr(stderr):
-            exit_code = main(["hgnc_id", "HGNC:1582", "--add-param-space", "--vertical"])
-        self.assertEqual(exit_code, 1)
-        self.assertIn("hgnc_id", stderr.getvalue())
+        stdout = io.StringIO()
+        with mock.patch("wikipedia_template_filler.cli.fill", return_value="{{infobox protein}}") as fake_fill:
+            with contextlib.redirect_stdout(stdout):
+                exit_code = main(["hgnc_id", "HGNC:1582", "--add-param-space", "--vertical"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout.getvalue(), "{{infobox protein}}\n")
+        fake_fill.assert_called_once_with("hgnc_id", "HGNC:1582", add_param_space=True, vertical=True)
 
 
 if __name__ == "__main__":

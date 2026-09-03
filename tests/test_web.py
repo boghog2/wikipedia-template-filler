@@ -9,11 +9,11 @@ from wikipedia_template_filler import web
 
 class WebAppTests(unittest.TestCase):
     def test_render_page_lists_supported_sources(self):
-        page = web.render_page(source_type="pmc", identifier="137841")
+        page = web.render_page(source_type="hgnc", identifier="HGNC:1582")
         self.assertIn("Wikipedia Template Filler", page)
         self.assertIn('option value="pmid"', page)
-        self.assertIn('option value="pmc" selected', page)
-        self.assertIn('option value="isbn"', page)
+        self.assertIn('option value="pmc"', page)
+        self.assertIn('option value="hgnc" selected', page)
         self.assertNotIn("drugbank_id", page)
 
     def test_render_page_escapes_output_and_errors(self):

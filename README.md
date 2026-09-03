@@ -62,12 +62,18 @@ wikipedia-template-filler pmid 18535242 --add-param-space
 wikipedia-template-filler pmc 137841 --add-param-space
 ```
 
-HGNC is recognized by the public API but has not been ported yet. DrugBank/drugbox is explicitly unsupported.
+HGNC lookup is implemented through the public genenames.org REST API:
+
+```bash
+wikipedia-template-filler hgnc HGNC:1582 --add-param-space
+```
+
+DrugBank/drugbox is explicitly unsupported.
 
 ## Initial Porting Order
 
 1. Template renderer and golden fixture tests
 2. ISBN via Open Library
-3. HGNC via HGNC REST API
-4. PubMed/PMC via NCBI E-utilities
+3. PubMed/PMC via NCBI E-utilities
+4. HGNC via HGNC REST API
 5. Explicit unsupported behavior for DrugBank/drugbox
