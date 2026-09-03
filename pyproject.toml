@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wikipedia-template-filler"
+version = "0.1.0"
+description = "Generate Wikipedia citation and infobox templates from public identifiers."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Artistic-1.0-Perl OR GPL-1.0-or-later" }
+authors = [
+  { name = "Konrad Koehler" }
+]
+keywords = ["wikipedia", "citations", "pubmed", "pmc", "hgnc", "isbn"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Artistic License",
+  "License :: OSI Approved :: GNU General Public License (GPL)",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Text Processing :: Markup",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+]
+
+[project.scripts]
+wikipedia-template-filler = "wikipedia_template_filler.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/boghog2/wikipedia-template-filler"
+Repository = "https://github.com/boghog2/wikipedia-template-filler"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
