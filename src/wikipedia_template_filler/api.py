@@ -44,6 +44,7 @@ SUPPORTED_SOURCES: tuple[SourceSpec, ...] = (
     SourceSpec("hgnc_id", "infobox protein", "supported", aliases=("hgnc",)),
     SourceSpec("isbn", "cite book", "supported"),
     SourceSpec("pubchem_cid", "Infobox drug", "supported", aliases=("pubchem", "cid", "drug")),
+    SourceSpec("pubchem_id", "chembox", "supported", aliases=("chembox", "pubchem_chembox")),
     SourceSpec(
         "drugbank_id",
         "drugbox",
@@ -109,6 +110,10 @@ class TemplateFiller:
             from wikipedia_template_filler.sources.pubchem import fill_pubchem
 
             return fill_pubchem(identifier, **merged_options)
+        if spec.source_type == "pubchem_id":
+            from wikipedia_template_filler.sources.pubchem import fill_pubchem_chembox
+
+            return fill_pubchem_chembox(identifier, **merged_options)
         return self._fill_pending_source(spec, identifier, **merged_options)
 
     def source_spec(self, source_type: str) -> SourceSpec:

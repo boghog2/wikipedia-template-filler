@@ -56,11 +56,22 @@ class PubChemCompound:
 
 def fill_pubchem(identifier: str, *, json_fetcher: JsonFetcher | None = None, **options: object) -> str:
     """Return an Infobox drug template for a PubChem CID."""
+    compound = lookup_pubchem_compound(identifier, json_fetcher=json_fetcher)
+    return render_drug_template(compound)
+
+
+def fill_pubchem_chembox(identifier: str, *, json_fetcher: JsonFetcher | None = None, **options: object) -> str:
+    """Return a Chembox template for a PubChem CID."""
+    compound = lookup_pubchem_compound(identifier, json_fetcher=json_fetcher)
+    return render_chembox_template(compound, add_iupac_name=bool(options.get("add_iupac_name", True)))
+
+
+def lookup_pubchem_compound(identifier: str, *, json_fetcher: JsonFetcher | None = None) -> PubChemCompound:
+    """Fetch normalized PubChem data for a CID-like identifier."""
     cid = normalize_cid(identifier)
     if not cid:
         raise SourceLookupError("no PubChem CID given")
-    compound = fetch_pubchem_compound(cid, fetcher=json_fetcher or fetch_json)
-    return render_drug_template(compound)
+    return fetch_pubchem_compound(cid, fetcher=json_fetcher or fetch_json)
 
 
 def normalize_cid(identifier: str) -> str:
@@ -280,6 +291,48 @@ FIELD_DEFAULTS = {
     "legal_UN": "<!-- N I, II, III, IV / P I, II, III, IV -->",
     "legal_status": "<!-- For countries not listed above -->",
 }
+
+
+def render_chembox_template(compound: PubChemCompound, *, add_iupac_name: bool = True) -> str:
+    """Render the legacy PubChem CID Chembox template."""
+    iupac_name = compound.iupac_name if add_iupac_name else ""
+    formula_html = html_formula(compound.molecular_formula)
+    return "\n".join(
+        (
+            "{{chembox",
+            "| ImageFile=",
+            "| ImageSize=",
+            f"| IUPACName={iupac_name}",
+            "| OtherNames=",
+            "| Section1={{Chembox Identifiers",
+            f"|  CASNo={compound.cas}",
+            f"|  PubChem={compound.cid}",
+            f"|  SMILES={compound.smiles}",
+            f"|  InChI={compound.inchi}",
+            f"|  InChIKey={compound.inchikey}",
+            "  }}",
+            "| Section2={{Chembox Properties",
+            f"|  Formula={formula_html}",
+            f"|  MolarMass={compound.molecular_weight}",
+            "|  Appearance=",
+            "|  Density=",
+            "|  MeltingPt=",
+            "|  BoilingPt=",
+            "|  Solubility=",
+            "  }}",
+            "| Section3={{Chembox Hazards",
+            "|  MainHazards=",
+            "|  FlashPt=",
+            "|  Autoignition=",
+            "  }}",
+            "}}",
+        )
+    )
+
+
+def html_formula(formula: str) -> str:
+    """Return a chemical formula with numeric counts as HTML subscripts."""
+    return re.sub(r"(\d+)", r"<sub>\1</sub>", formula)
 
 
 def render_drug_template(compound: PubChemCompound) -> str:

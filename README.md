@@ -62,10 +62,11 @@ wikipedia-template-filler pmid 18535242 --add-param-space
 wikipedia-template-filler pmc 137841 --add-param-space
 ```
 
-PubChem CID lookup is implemented through PubChem PUG REST and generates Infobox drug:
+PubChem CID lookup is implemented through PubChem PUG REST and can generate either Infobox drug or the legacy Chembox:
 
 ```bash
 wikipedia-template-filler pubchem 2244 --add-param-space
+wikipedia-template-filler chembox 2244
 ```
 
 HGNC lookup is implemented through the public genenames.org REST API:
@@ -82,4 +83,5 @@ DrugBank/drugbox is explicitly unsupported.
 2. ISBN via Open Library
 3. PubMed/PMC via NCBI E-utilities
 4. HGNC via HGNC REST API
-5. Explicit unsupported behavior for DrugBank/drugbox
+5. PubChem CID via PubChem PUG REST
+6. Explicit unsupported behavior for DrugBank/drugbox

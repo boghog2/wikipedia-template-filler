@@ -14,6 +14,7 @@ class WebAppTests(unittest.TestCase):
         self.assertIn('option value="pmid"', page)
         self.assertIn('option value="pmc"', page)
         self.assertIn('option value="hgnc" selected', page)
+        self.assertIn("option value=\"chembox\"", page)
         self.assertNotIn("drugbank_id", page)
 
     def test_render_page_escapes_output_and_errors(self):

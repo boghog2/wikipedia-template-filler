@@ -7,6 +7,8 @@ from wikipedia_template_filler.sources.pubchem import (
     compound_fields,
     fetch_pubchem_compound,
     fill_pubchem,
+    fill_pubchem_chembox,
+    html_formula,
     first_matching_group,
     normalize_cid,
     parse_property_response,
@@ -132,10 +134,32 @@ class PubChemTests(unittest.TestCase):
         self.assertNotIn("| charge =", output)
         self.assertIn("| StdInChIKey             = BSYNRYMUTXBXSQ-UHFFFAOYSA-N", output)
 
+    def test_fill_pubchem_chembox_renders_legacy_chembox(self):
+        output = fill_pubchem_chembox("CID:2244", json_fetcher=fake_fetcher)
+        self.assertTrue(output.startswith("{{chembox\n"))
+        self.assertIn("| IUPACName=2-acetyloxybenzoic acid", output)
+        self.assertIn("| Section1={{Chembox Identifiers", output)
+        self.assertIn("|  CASNo=50-78-2", output)
+        self.assertIn("|  PubChem=2244", output)
+        self.assertIn("|  SMILES=CC(=O)OC1=CC=CC=C1C(=O)O", output)
+        self.assertIn("|  InChIKey=BSYNRYMUTXBXSQ-UHFFFAOYSA-N", output)
+        self.assertIn("| Section2={{Chembox Properties", output)
+        self.assertIn("|  Formula=C<sub>9</sub>H<sub>8</sub>O<sub>4</sub>", output)
+        self.assertIn("|  MolarMass=180.16", output)
+        self.assertIn("| Section3={{Chembox Hazards", output)
+
+    def test_html_formula_adds_subscripts(self):
+        self.assertEqual(html_formula("C9H8O4"), "C<sub>9</sub>H<sub>8</sub>O<sub>4</sub>")
+
     def test_public_fill_routes_to_pubchem_source(self):
         output = fill("pubchem", "2244", json_fetcher=fake_fetcher, add_param_space=True)
         self.assertIn("{{Infobox drug", output)
         self.assertIn("| DrugBank                = DB00945", output)
+
+    def test_public_fill_routes_to_pubchem_chembox_source(self):
+        output = fill("chembox", "2244", json_fetcher=fake_fetcher)
+        self.assertIn("{{chembox", output)
+        self.assertIn("|  PubChem=2244", output)
 
     def test_fetch_raises_for_missing_compound(self):
         with self.assertRaisesRegex(SourceLookupError, "no compound matches"):

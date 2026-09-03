@@ -199,7 +199,7 @@ if (copyButton) {{
 
 def source_options(selected: str) -> str:
     """Render option tags for supported sources."""
-    aliases = {"pubmed_id": "pmid", "pubmedcentral_id": "pmc", "hgnc_id": "hgnc", "isbn": "isbn", "pubchem_cid": "pubchem"}
+    aliases = {"pubmed_id": "pmid", "pubmedcentral_id": "pmc", "hgnc_id": "hgnc", "isbn": "isbn", "pubchem_cid": "pubchem", "pubchem_id": "chembox"}
     options = []
     for spec in supported_sources():
         value = aliases.get(spec.source_type, spec.source_type)
