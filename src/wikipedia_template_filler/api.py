@@ -34,7 +34,7 @@ class SourceSpec:
 
 
 SUPPORTED_SOURCES: tuple[SourceSpec, ...] = (
-    SourceSpec("pubmed_id", "cite journal", "pending", aliases=("pmid", "pubmed")),
+    SourceSpec("pubmed_id", "cite journal", "supported", aliases=("pmid", "pubmed")),
     SourceSpec(
         "pubmedcentral_id",
         "cite journal",
@@ -92,6 +92,10 @@ class TemplateFiller:
             from wikipedia_template_filler.sources.isbn import fill_isbn
 
             return fill_isbn(identifier, **merged_options)
+        if spec.source_type == "pubmed_id":
+            from wikipedia_template_filler.sources.pubmed import fill_pubmed
+
+            return fill_pubmed(identifier, **merged_options)
         return self._fill_pending_source(spec, identifier, **merged_options)
 
     def source_spec(self, source_type: str) -> SourceSpec:

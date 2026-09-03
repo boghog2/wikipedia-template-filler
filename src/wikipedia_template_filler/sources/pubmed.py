@@ -1,0 +1,199 @@
+"""PubMed lookup through NCBI E-utilities."""
+
+from __future__ import annotations
+
+import re
+import xml.etree.ElementTree as ET
+from collections.abc import Callable
+from dataclasses import dataclass
+from html import unescape
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+
+from wikipedia_template_filler.api import TemplateFillerError
+from wikipedia_template_filler.renderer import render_template
+
+NCBI_EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+MONTHS = {
+    "jan": "January",
+    "feb": "February",
+    "mar": "March",
+    "apr": "April",
+    "may": "May",
+    "jun": "June",
+    "jul": "July",
+    "aug": "August",
+    "sep": "September",
+    "oct": "October",
+    "nov": "November",
+    "dec": "December",
+}
+
+
+class SourceLookupError(TemplateFillerError):
+    """Raised when an upstream PubMed lookup fails."""
+
+
+XmlFetcher = Callable[[str], str]
+
+
+@dataclass(frozen=True)
+class PubMedArticle:
+    """Normalized PubMed article data used for citation rendering."""
+
+    vauthors: str
+    title: str
+    journal: str
+    volume: str
+    issue: str
+    pages: str
+    date: str
+    pmid: str
+    pmc: str
+    doi: str
+    url: str = ""
+
+
+def fill_pubmed(identifier: str, *, xml_fetcher: XmlFetcher | None = None, **options: object) -> str:
+    """Return a ``{{cite journal}}`` template for a PubMed ID."""
+    pmid = normalize_pmid(identifier)
+    if not pmid:
+        raise SourceLookupError("no PubMed ID given")
+
+    xml = (xml_fetcher or fetch_xml)(pubmed_url(pmid))
+    article = parse_pubmed_article(xml, expected_pmid=pmid)
+    return render_template(
+        "cite journal",
+        article_fields(article),
+        add_param_space=bool(options.get("add_param_space", False)),
+        vertical=bool(options.get("vertical", False)),
+    )
+
+
+def normalize_pmid(identifier: str) -> str:
+    """Return digits only for a PubMed identifier."""
+    return re.sub(r"\D", "", identifier)
+
+
+def pubmed_url(pmid: str) -> str:
+    """Build the NCBI efetch URL for *pmid*."""
+    query = urlencode({"db": "pubmed", "id": pmid, "retmode": "xml"})
+    return f"{NCBI_EUTILS_BASE}/efetch.fcgi?{query}"
+
+
+def fetch_xml(url: str) -> str:
+    """Fetch XML from *url* using the standard library."""
+    request = Request(url, headers={"User-Agent": "wikipedia-template-filler/0.1.0"})
+    try:
+        with urlopen(request, timeout=10) as response:
+            return response.read().decode("utf-8")
+    except HTTPError as exc:
+        raise SourceLookupError(f"PubMed lookup failed: {exc.code} {exc.reason}") from exc
+    except URLError as exc:
+        raise SourceLookupError(f"PubMed lookup failed: {exc.reason}") from exc
+
+
+def parse_pubmed_article(xml: str, *, expected_pmid: str | None = None) -> PubMedArticle:
+    """Parse one PubMed efetch XML response into normalized article data."""
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError as exc:
+        raise SourceLookupError("PubMed returned invalid XML") from exc
+
+    article_node = root.find("PubmedArticle")
+    if article_node is None:
+        raise SourceLookupError(f"no article matches the given PubMed ID ({expected_pmid})")
+
+    medline = article_node.find("MedlineCitation")
+    article = medline.find("Article") if medline is not None else None
+    journal = article.find("Journal") if article is not None else None
+    pubmed_data = article_node.find("PubmedData")
+
+    pmid = text(medline.find("PMID") if medline is not None else None)
+    if expected_pmid and pmid != expected_pmid:
+        raise SourceLookupError(f"no article matches the given PubMed ID ({expected_pmid})")
+
+    return PubMedArticle(
+        vauthors=vancouver_authors(article.find("AuthorList") if article is not None else None),
+        title=strip_trailing_period(text(article.find("ArticleTitle") if article is not None else None)),
+        journal=text(journal.find("ISOAbbreviation") if journal is not None else None),
+        volume=text(journal.find("JournalIssue/Volume") if journal is not None else None),
+        issue=text(journal.find("JournalIssue/Issue") if journal is not None else None),
+        pages=normalize_pages(text(article.find("Pagination/MedlinePgn") if article is not None else None)),
+        date=publication_date(journal.find("JournalIssue/PubDate") if journal is not None else None),
+        pmid=pmid,
+        pmc=article_id(pubmed_data, "pmc").removeprefix("PMC"),
+        doi=article_id(pubmed_data, "doi") or text(article.find('ELocationID[@EIdType="doi"]') if article is not None else None),
+    )
+
+
+def article_fields(article: PubMedArticle) -> list[tuple[str, str]]:
+    """Return ordered ``{{cite journal}}`` fields for a PubMed article."""
+    return [
+        ("vauthors", article.vauthors),
+        ("title", article.title),
+        ("journal", article.journal),
+        ("volume", article.volume),
+        ("issue", article.issue),
+        ("pages", article.pages),
+        ("date", article.date),
+        ("pmid", article.pmid),
+        ("pmc", article.pmc),
+        ("doi", article.doi),
+        ("url", article.url),
+    ]
+
+
+def text(node: ET.Element | None) -> str:
+    """Return concatenated text for an XML node."""
+    if node is None:
+        return ""
+    return unescape("".join(node.itertext()).strip())
+
+
+def strip_trailing_period(value: str) -> str:
+    """Match Perl behavior by stripping one trailing article-title period."""
+    return value[:-1] if value.endswith(".") else value
+
+
+def normalize_pages(value: str) -> str:
+    """Use en dashes in page ranges, matching the Perl golden output."""
+    return value.replace("-", "–")
+
+
+def publication_date(pub_date: ET.Element | None) -> str:
+    """Return a citation date from a PubMed ``PubDate`` node."""
+    if pub_date is None:
+        return ""
+    year = text(pub_date.find("Year"))
+    month = expand_month(text(pub_date.find("Month")))
+    return " ".join(part for part in (month, year) if part)
+
+
+def expand_month(month: str) -> str:
+    """Expand NCBI three-letter month abbreviations."""
+    return MONTHS.get(month[:3].lower(), month)
+
+
+def vancouver_authors(author_list: ET.Element | None) -> str:
+    """Return PubMed authors as Vancouver-style names."""
+    if author_list is None:
+        return ""
+    authors = []
+    for author in author_list.findall("Author"):
+        last = text(author.find("LastName"))
+        initials = text(author.find("Initials"))[:2]
+        if last:
+            authors.append(f"{last} {initials}" if initials else last)
+    return ", ".join(authors)
+
+
+def article_id(pubmed_data: ET.Element | None, id_type: str) -> str:
+    """Return an article identifier by PubMed ``IdType``."""
+    if pubmed_data is None:
+        return ""
+    for node in pubmed_data.findall("ArticleIdList/ArticleId"):
+        if node.attrib.get("IdType", "").lower() == id_type.lower():
+            return text(node)
+    return ""

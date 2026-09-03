@@ -18,8 +18,8 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(wikipedia_template_filler.__version__, "0.1.0")
 
     def test_fill_placeholder_is_explicit_for_pending_sources(self):
-        with self.assertRaisesRegex(NotImplementedSourceError, "pubmed_id.*cite journal.*not implemented"):
-            fill("pubmed_id", "18535242")
+        with self.assertRaisesRegex(NotImplementedSourceError, "hgnc_id.*infobox protein.*not implemented"):
+            fill("hgnc_id", "HGNC:1582")
 
     def test_template_filler_normalizes_source_aliases(self):
         filler = TemplateFiller()
@@ -52,9 +52,9 @@ class PackageTests(unittest.TestCase):
     def test_cli_accepts_renderer_options_for_api_calls(self):
         stderr = io.StringIO()
         with contextlib.redirect_stderr(stderr):
-            exit_code = main(["pubmed_id", "18535242", "--add-param-space", "--vertical"])
+            exit_code = main(["hgnc_id", "HGNC:1582", "--add-param-space", "--vertical"])
         self.assertEqual(exit_code, 1)
-        self.assertIn("pubmed_id", stderr.getvalue())
+        self.assertIn("hgnc_id", stderr.getvalue())
 
 
 if __name__ == "__main__":
