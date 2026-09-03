@@ -10,6 +10,7 @@ import wikipedia_template_filler
 from wikipedia_template_filler import (
     TemplateFiller,
     UnknownSourceError,
+    NotImplementedSourceError,
     UnsupportedSourceError,
     fill,
 )
@@ -46,6 +47,11 @@ class PackageTests(unittest.TestCase):
     def test_drugbank_is_explicitly_unsupported(self):
         with self.assertRaisesRegex(UnsupportedSourceError, "DrugBank/drugbox lookup is currently unsupported"):
             fill("drugbank_id", "DB00338")
+
+    def test_url_source_is_explicitly_pending(self):
+        with self.assertRaises(NotImplementedSourceError) as context:
+            fill("url", "https://example.org")
+        self.assertIn("URL -> {{cite web}} lookup is recognized", str(context.exception))
 
     def test_cli_without_arguments_shows_help(self):
         stdout = io.StringIO()
@@ -171,6 +177,13 @@ class PackageTests(unittest.TestCase):
             exit_code = main(["drugbank_id", "DB00338"])
         self.assertEqual(exit_code, 1)
         self.assertIn("DrugBank/drugbox lookup is currently unsupported", stderr.getvalue())
+
+    def test_cli_reports_pending_sources(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            exit_code = main(["url", "https://example.org"])
+        self.assertEqual(exit_code, 1)
+        self.assertIn("URL -> {{cite web}} lookup is recognized", stderr.getvalue())
 
     def test_cli_accepts_renderer_options_for_api_calls(self):
         stdout = io.StringIO()

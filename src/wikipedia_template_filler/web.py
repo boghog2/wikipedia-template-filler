@@ -11,7 +11,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlencode, urlparse
 
 from . import __version__, fill
-from .api import SUPPORTED_SOURCES, SourceSpec, TemplateFillerError
+from .api import SUPPORTED_SOURCES, SourceSpec, TemplateFiller, TemplateFillerError
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8780
@@ -266,14 +266,35 @@ if (copyButton) {{
 
 
 def source_options(selected: str) -> str:
-    """Render option tags for supported sources."""
+    """Render option tags for supported sources, preserving unavailable selections."""
     options = []
+    selected_unavailable = unavailable_selected_source(selected)
+    if selected_unavailable is not None:
+        value = SOURCE_VALUES.get(selected_unavailable.source_type, selected_unavailable.source_type)
+        label = (
+            f"{SOURCE_LABELS.get(selected_unavailable.source_type, selected_unavailable.source_type)} "
+            f"-> {selected_unavailable.template} ({selected_unavailable.status})"
+        )
+        options.append(
+            f'<option value="{html.escape(value)}" selected disabled>{html.escape(label)}</option>'
+        )
     for spec in supported_sources():
         value = SOURCE_VALUES.get(spec.source_type, spec.source_type)
         label = f"{SOURCE_LABELS.get(spec.source_type, spec.source_type)} -> {spec.template}"
-        selected_attr = " selected" if selected in (value, spec.source_type, *spec.aliases) else ""
+        selected_attr = " selected" if selected_unavailable is None and selected in (value, spec.source_type, *spec.aliases) else ""
         options.append(f'<option value="{html.escape(value)}"{selected_attr}>{html.escape(label)}</option>')
     return "\n        ".join(options)
+
+
+def unavailable_selected_source(selected: str) -> SourceSpec | None:
+    """Return the selected source when it is known but cannot currently run."""
+    try:
+        spec = TemplateFiller().source_spec(selected)
+    except TemplateFillerError:
+        return None
+    if spec.status == "supported":
+        return None
+    return spec
 
 
 def data_sources_table() -> str:

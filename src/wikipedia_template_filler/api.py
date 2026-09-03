@@ -45,7 +45,13 @@ SUPPORTED_SOURCES: tuple[SourceSpec, ...] = (
     SourceSpec("isbn", "cite book", "supported"),
     SourceSpec("pubchem_cid", "infobox drug", "supported", aliases=("pubchem", "cid", "drug")),
     SourceSpec("pubchem_id", "chembox", "supported", aliases=("chembox", "pubchem_chembox")),
-    SourceSpec("url", "cite web", "pending", aliases=("cite_web", "web")),
+    SourceSpec(
+        "url",
+        "cite web",
+        "pending",
+        aliases=("cite_web", "web"),
+        message="URL -> {{cite web}} lookup is recognized but has not been ported yet.",
+    ),
     SourceSpec(
         "drugbank_id",
         "drugbox",
@@ -88,7 +94,9 @@ class TemplateFiller:
         """Return wiki template markup for *identifier* from *source_type*."""
         spec = self.source_spec(source_type)
         if spec.status == "unsupported":
-            raise UnsupportedSourceError(spec.message or f"{spec.source_type} is unsupported")
+            raise UnsupportedSourceError(unavailable_source_message(spec))
+        if spec.status == "pending":
+            raise NotImplementedSourceError(unavailable_source_message(spec))
 
         merged_options = {**self.default_options, **options}
         if spec.source_type == "isbn":
@@ -127,10 +135,16 @@ class TemplateFiller:
             raise UnknownSourceError(f"unknown source type {source_type!r}; expected one of: {known}") from exc
 
     def _fill_pending_source(self, spec: SourceSpec, identifier: str, **options: object) -> str:
-        raise NotImplementedSourceError(
-            f"{spec.source_type!r} -> {{{{{spec.template}}}}} lookup is not implemented yet "
-            f"for {identifier!r}"
-        )
+        raise NotImplementedSourceError(unavailable_source_message(spec))
+
+
+def unavailable_source_message(spec: SourceSpec) -> str:
+    """Return a user-facing message for a recognized source that cannot run."""
+    if spec.message:
+        return spec.message
+    if spec.status == "pending":
+        return f"{spec.source_type} -> {{{{{spec.template}}}}} lookup is recognized but has not been ported yet."
+    return f"{spec.source_type} -> {{{{{spec.template}}}}} lookup is currently unsupported."
 
 
 def fill(source_type: str, identifier: str, **options: object) -> str:

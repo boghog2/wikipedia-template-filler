@@ -1,3 +1,4 @@
+import contextlib
 import http.client
 import threading
 import unittest
@@ -40,6 +41,16 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("&lt;bad&gt;", page)
         self.assertIn("x &lt; y", page)
 
+    def test_render_page_preserves_pending_selection(self):
+        page = web.render_page(source_type="url", identifier="https://example.org")
+        self.assertIn('<option value="url" selected disabled>URL -&gt; cite web (pending)</option>', page)
+        self.assertNotIn('<option value="url">', page)
+
+    def test_render_page_preserves_unsupported_selection(self):
+        page = web.render_page(source_type="drugbank_id", identifier="DB00338")
+        self.assertIn('<option value="drugbank_id" selected disabled>DrugBank ID -&gt; drugbox (unsupported)</option>', page)
+        self.assertNotIn('<option value="drugbank_id">', page)
+
     def test_query_flag_defaults_and_false_values(self):
         self.assertTrue(web.query_flag({}, "add_param_space", default=True))
         self.assertFalse(web.query_flag({"vertical": ["0"]}, "vertical"))
@@ -69,12 +80,28 @@ class WebAppTests(unittest.TestCase):
         body = self.fetch("/cgi-bin/index.cgi?type=pubchem_id&id=2244", fill_result="{{chembox}}")
         self.assertIn("{{chembox}}", body)
 
-    def fetch(self, path: str, fill_result: str = "") -> str:
+
+    def test_pending_legacy_url_renders_clear_error(self):
+        body = self.fetch("/?type=url&id=https%3A%2F%2Fexample.org", fill_result=None)
+        self.assertIn("URL -&gt; {{cite web}} lookup is recognized", body)
+        self.assertIn('<option value="url" selected disabled>URL -&gt; cite web (pending)</option>', body)
+
+    def test_unsupported_legacy_url_renders_clear_error(self):
+        body = self.fetch("/?type=drugbank_id&id=DB00338", fill_result=None)
+        self.assertIn("DrugBank/drugbox lookup is currently unsupported", body)
+        self.assertIn('<option value="drugbank_id" selected disabled>DrugBank ID -&gt; drugbox (unsupported)</option>', body)
+
+    def fetch(self, path: str, fill_result: str | None = "") -> str:
         server = ThreadingHTTPServer((web.DEFAULT_HOST, 0), web.make_handler())
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
+        patch_context = (
+            contextlib.nullcontext()
+            if fill_result is None
+            else mock.patch("wikipedia_template_filler.web.fill", return_value=fill_result)
+        )
         try:
-            with mock.patch("wikipedia_template_filler.web.fill", return_value=fill_result):
+            with patch_context:
                 connection = http.client.HTTPConnection(web.DEFAULT_HOST, server.server_port, timeout=5)
                 connection.request("GET", path)
                 response = connection.getresponse()
