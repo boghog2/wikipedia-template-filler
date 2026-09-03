@@ -28,13 +28,14 @@ ISBN lookup is implemented through the Open Library Books API:
 PYTHONPATH=src python3 -m wikipedia_template_filler.cli isbn 0721659446 --add-param-space
 ```
 
-PubMed ID lookup is implemented through NCBI E-utilities:
+PubMed and PubMed Central lookup are implemented through NCBI E-utilities:
 
 ```bash
 PYTHONPATH=src python3 -m wikipedia_template_filler.cli pmid 18535242 --add-param-space
+PYTHONPATH=src python3 -m wikipedia_template_filler.cli pmc 137841 --add-param-space
 ```
 
-HGNC and PMC are recognized by the public API but have not been ported yet. DrugBank/drugbox is explicitly unsupported.
+HGNC is recognized by the public API but has not been ported yet. DrugBank/drugbox is explicitly unsupported.
 
 ## Initial Porting Order
 

@@ -63,6 +63,25 @@ def fill_pubmed(identifier: str, *, xml_fetcher: XmlFetcher | None = None, **opt
 
     xml = (xml_fetcher or fetch_xml)(pubmed_url(pmid))
     article = parse_pubmed_article(xml, expected_pmid=pmid)
+    return render_article(article, **options)
+
+
+def fill_pmc(identifier: str, *, xml_fetcher: XmlFetcher | None = None, **options: object) -> str:
+    """Return a ``{{cite journal}}`` template for a PubMed Central ID."""
+    pmcid = normalize_pmcid(identifier)
+    if not pmcid:
+        raise SourceLookupError("no PubMed Central ID given")
+
+    fetcher = xml_fetcher or fetch_xml
+    linked_pmid = parse_linked_pmid(fetcher(pmc_to_pubmed_url(pmcid)), expected_pmcid=pmcid)
+    article = parse_pubmed_article(fetcher(pubmed_url(linked_pmid)), expected_pmid=linked_pmid)
+    if article.pmc and article.pmc != pmcid:
+        raise SourceLookupError(f"no article matches the given PubMed Central ID ({pmcid})")
+    return render_article(article, **options)
+
+
+def render_article(article: PubMedArticle, **options: object) -> str:
+    """Render normalized article data as a ``{{cite journal}}`` template."""
     return render_template(
         "cite journal",
         article_fields(article),
@@ -76,10 +95,21 @@ def normalize_pmid(identifier: str) -> str:
     return re.sub(r"\D", "", identifier)
 
 
+def normalize_pmcid(identifier: str) -> str:
+    """Return digits only for a PubMed Central identifier."""
+    return re.sub(r"^\s*PMC", "", identifier, flags=re.IGNORECASE).strip()
+
+
 def pubmed_url(pmid: str) -> str:
     """Build the NCBI efetch URL for *pmid*."""
     query = urlencode({"db": "pubmed", "id": pmid, "retmode": "xml"})
     return f"{NCBI_EUTILS_BASE}/efetch.fcgi?{query}"
+
+
+def pmc_to_pubmed_url(pmcid: str) -> str:
+    """Build the NCBI elink URL that maps a PMCID to its PubMed ID."""
+    query = urlencode({"dbfrom": "pmc", "db": "pubmed", "id": pmcid, "retmode": "xml"})
+    return f"{NCBI_EUTILS_BASE}/elink.fcgi?{query}"
 
 
 def fetch_xml(url: str) -> str:
@@ -92,6 +122,23 @@ def fetch_xml(url: str) -> str:
         raise SourceLookupError(f"PubMed lookup failed: {exc.code} {exc.reason}") from exc
     except URLError as exc:
         raise SourceLookupError(f"PubMed lookup failed: {exc.reason}") from exc
+
+
+def parse_linked_pmid(xml: str, *, expected_pmcid: str | None = None) -> str:
+    """Parse an NCBI elink response and return the linked PubMed ID."""
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError as exc:
+        raise SourceLookupError("PubMed Central lookup returned invalid XML") from exc
+
+    for link in root.findall("LinkSet/LinkSetDb/Link/Id"):
+        pmid = text(link)
+        if pmid:
+            return pmid
+
+    if expected_pmcid:
+        raise SourceLookupError(f"no PubMed article is linked to PubMed Central ID ({expected_pmcid})")
+    raise SourceLookupError("no PubMed article is linked to the given PubMed Central ID")
 
 
 def parse_pubmed_article(xml: str, *, expected_pmid: str | None = None) -> PubMedArticle:
