@@ -20,6 +20,16 @@ Run tests:
 pytest
 ```
 
+## Current Status
+
+ISBN lookup is implemented through the Open Library Books API:
+
+```bash
+PYTHONPATH=src python3 -m wikipedia_template_filler.cli isbn 0721659446 --add-param-space
+```
+
+HGNC, PubMed, and PMC are recognized by the public API but have not been ported yet. DrugBank/drugbox is explicitly unsupported.
+
 ## Initial Porting Order
 
 1. Template renderer and golden fixture tests

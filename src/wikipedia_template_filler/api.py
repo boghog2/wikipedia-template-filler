@@ -42,7 +42,7 @@ SUPPORTED_SOURCES: tuple[SourceSpec, ...] = (
         aliases=("pmc", "pmcid", "pubmed_central_id"),
     ),
     SourceSpec("hgnc_id", "infobox protein", "pending", aliases=("hgnc",)),
-    SourceSpec("isbn", "cite book", "pending"),
+    SourceSpec("isbn", "cite book", "supported"),
     SourceSpec(
         "drugbank_id",
         "drugbox",
@@ -88,6 +88,10 @@ class TemplateFiller:
             raise UnsupportedSourceError(spec.message or f"{spec.source_type} is unsupported")
 
         merged_options = {**self.default_options, **options}
+        if spec.source_type == "isbn":
+            from wikipedia_template_filler.sources.isbn import fill_isbn
+
+            return fill_isbn(identifier, **merged_options)
         return self._fill_pending_source(spec, identifier, **merged_options)
 
     def source_spec(self, source_type: str) -> SourceSpec:

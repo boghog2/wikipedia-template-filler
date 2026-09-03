@@ -18,8 +18,8 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(wikipedia_template_filler.__version__, "0.1.0")
 
     def test_fill_placeholder_is_explicit_for_pending_sources(self):
-        with self.assertRaisesRegex(NotImplementedSourceError, "isbn.*cite book.*not implemented"):
-            fill("isbn", "0721659446")
+        with self.assertRaisesRegex(NotImplementedSourceError, "pubmed_id.*cite journal.*not implemented"):
+            fill("pubmed_id", "18535242")
 
     def test_template_filler_normalizes_source_aliases(self):
         filler = TemplateFiller()
@@ -48,6 +48,13 @@ class PackageTests(unittest.TestCase):
             exit_code = main(["drugbank_id", "DB00338"])
         self.assertEqual(exit_code, 1)
         self.assertIn("DrugBank/drugbox lookup is currently unsupported", stderr.getvalue())
+
+    def test_cli_accepts_renderer_options_for_api_calls(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            exit_code = main(["pubmed_id", "18535242", "--add-param-space", "--vertical"])
+        self.assertEqual(exit_code, 1)
+        self.assertIn("pubmed_id", stderr.getvalue())
 
 
 if __name__ == "__main__":

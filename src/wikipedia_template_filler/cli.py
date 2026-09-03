@@ -16,6 +16,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("source_type", nargs="?", help="source type, such as isbn")
     parser.add_argument("identifier", nargs="?", help="identifier to look up")
+    parser.add_argument("--add-param-space", action="store_true", help="pad template parameter names and values")
+    parser.add_argument("--vertical", action="store_true", help="render one template parameter per line")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return parser
 
@@ -28,8 +30,19 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     try:
-        print(fill(args.source_type, args.identifier))
+        print(
+            fill(
+                args.source_type,
+                args.identifier,
+                add_param_space=args.add_param_space,
+                vertical=args.vertical,
+            )
+        )
     except TemplateFillerError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
