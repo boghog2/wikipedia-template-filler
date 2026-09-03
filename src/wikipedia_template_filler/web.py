@@ -163,14 +163,14 @@ textarea {{
     <h1>Wikipedia Template Filler</h1>
     <div class="version">v{html.escape(__version__)}</div>
   </header>
-  <form method="get" action="/fill">
+  <form method="get" action="/">
     <label>Source
-      <select name="source_type">
+      <select name="type">
         {source_options(source_type)}
       </select>
     </label>
     <label>Identifier
-      <input name="identifier" type="text" value="{html.escape(identifier)}" autocomplete="off" autofocus>
+      <input name="id" type="text" value="{html.escape(identifier)}" autocomplete="off" autofocus>
     </label>
     <button type="submit">Fill</button>
     <div class="options">
@@ -200,10 +200,18 @@ if (copyButton) {{
 def source_options(selected: str) -> str:
     """Render option tags for supported sources."""
     aliases = {"pubmed_id": "pmid", "pubmedcentral_id": "pmc", "hgnc_id": "hgnc", "isbn": "isbn", "pubchem_cid": "pubchem", "pubchem_id": "chembox"}
+    labels = {
+        "pubmed_id": "PubMed ID",
+        "pubmedcentral_id": "PubMed Central ID",
+        "hgnc_id": "HGNC ID",
+        "isbn": "ISBN",
+        "pubchem_cid": "PubChem CID",
+        "pubchem_id": "PubChem CID",
+    }
     options = []
     for spec in supported_sources():
         value = aliases.get(spec.source_type, spec.source_type)
-        label = f"{value} -> {spec.template}"
+        label = f"{labels.get(spec.source_type, spec.source_type)} -> {spec.template}"
         selected_attr = " selected" if selected in (value, spec.source_type, *spec.aliases) else ""
         options.append(f'<option value="{html.escape(value)}"{selected_attr}>{html.escape(label)}</option>')
     return "\n        ".join(options)
@@ -239,6 +247,38 @@ def query_flag(params: dict[str, list[str]], name: str, default: bool = False) -
     return params[name][-1].lower() not in {"", "0", "false", "off"}
 
 
+def query_value(params: dict[str, list[str]], *names: str, default: str = "") -> str:
+    """Return the last non-empty value for the first matching query name."""
+    for name in names:
+        values = params.get(name)
+        if values:
+            value = values[-1].strip()
+            if value:
+                return value
+    return default
+
+
+def renderer_options(params: dict[str, list[str]]) -> dict[str, bool]:
+    """Return renderer flags accepted by the legacy CGI query string."""
+    flag_names = (
+        "vertical",
+        "extended",
+        "add_param_space",
+        "add_ref_tag",
+        "dont_use_etal",
+        "omit_url_if_doi_filled",
+        "dont_strip_trailing_period",
+        "full_journal_title",
+        "link_journal",
+        "add_text_url",
+        "add_accessdate",
+        "add_iupac_name",
+    )
+    options = {name: query_flag(params, name) for name in flag_names}
+    options["add_param_space"] = query_flag(params, "add_param_space", default=True)
+    return options
+
+
 def make_handler() -> type[BaseHTTPRequestHandler]:
     """Create a request handler bound to the template-filler API."""
 
@@ -247,19 +287,21 @@ def make_handler() -> type[BaseHTTPRequestHandler]:
 
         def do_GET(self) -> None:
             parsed = urlparse(self.path)
-            if parsed.path == "/":
-                self.respond_html(render_page())
-                return
-            if parsed.path == "/fill":
-                self.handle_fill(parse_qs(parsed.query))
+            if parsed.path in {"/", "/fill", "/cgi-bin/index.cgi"}:
+                params = parse_qs(parsed.query)
+                if parsed.path == "/" and not params:
+                    self.respond_html(render_page())
+                else:
+                    self.handle_fill(params)
                 return
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
         def handle_fill(self, params: dict[str, list[str]]) -> None:
-            source_type = params.get("source_type", ["pmid"])[-1].strip()
-            identifier = params.get("identifier", [""])[-1].strip()
-            add_param_space = query_flag(params, "add_param_space", default=True)
-            vertical = query_flag(params, "vertical")
+            source_type = query_value(params, "source_type", "type", default="pmid")
+            identifier = query_value(params, "identifier", "id")
+            options = renderer_options(params)
+            add_param_space = options["add_param_space"]
+            vertical = options["vertical"]
             output = ""
             error = ""
 
@@ -270,8 +312,7 @@ def make_handler() -> type[BaseHTTPRequestHandler]:
                     output = fill(
                         source_type,
                         identifier,
-                        add_param_space=add_param_space,
-                        vertical=vertical,
+                        **options,
                     )
                 except TemplateFillerError as exc:
                     error = str(exc)

@@ -77,6 +77,8 @@ wikipedia-template-filler hgnc HGNC:1582 --add-param-space
 
 DrugBank/drugbox is explicitly unsupported.
 
+The local web app accepts legacy CGI-style query parameters used by old links, such as `/?type=pubmed_id&id=18535242&add_param_space=1` and `/?type=pubchem_id&id=2244`. The newer `/fill?source_type=pmid&identifier=18535242` form remains supported too.
+
 ## Initial Porting Order
 
 1. Template renderer and golden fixture tests

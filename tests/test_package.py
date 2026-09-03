@@ -25,6 +25,7 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(filler.source_spec("isbn").status, "supported")
         self.assertEqual(filler.source_spec("pubchem").status, "supported")
         self.assertEqual(filler.source_spec("chembox").status, "supported")
+        self.assertEqual(filler.source_spec("web").status, "pending")
         self.assertEqual(filler.source_spec("drugbank").status, "unsupported")
 
     def test_template_filler_normalizes_source_aliases(self):

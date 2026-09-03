@@ -11,10 +11,17 @@ class WebAppTests(unittest.TestCase):
     def test_render_page_lists_supported_sources(self):
         page = web.render_page(source_type="hgnc", identifier="HGNC:1582")
         self.assertIn("Wikipedia Template Filler", page)
+        self.assertIn("PubMed ID -&gt; cite journal", page)
+        self.assertIn("PubMed Central ID -&gt; cite journal", page)
+        self.assertIn("HGNC ID -&gt; infobox protein", page)
+        self.assertIn("PubChem CID -&gt; Infobox drug", page)
+        self.assertIn("PubChem CID -&gt; chembox", page)
         self.assertIn('option value="pmid"', page)
         self.assertIn('option value="pmc"', page)
         self.assertIn('option value="hgnc" selected', page)
         self.assertIn("option value=\"chembox\"", page)
+        self.assertIn("select name=\"type\"", page)
+        self.assertIn("input name=\"id\"", page)
         self.assertNotIn("drugbank_id", page)
 
     def test_render_page_escapes_output_and_errors(self):
@@ -38,6 +45,18 @@ class WebAppTests(unittest.TestCase):
     def test_fill_route_renders_missing_identifier_error(self):
         body = self.fetch("/fill?source_type=pmid")
         self.assertIn("Enter an identifier.", body)
+
+    def test_legacy_query_names_fill_from_root_path(self):
+        body = self.fetch(
+            "/?ddb=&type=pubmed_id&id=18535242&add_param_space=1&add_ref_tag=1&full_journal_title=1",
+            fill_result="{{cite journal}}",
+        )
+        self.assertIn("{{cite journal}}", body)
+        self.assertIn("value=\"18535242\"", body)
+
+    def test_legacy_cgi_path_is_accepted(self):
+        body = self.fetch("/cgi-bin/index.cgi?type=pubchem_id&id=2244", fill_result="{{chembox}}")
+        self.assertIn("{{chembox}}", body)
 
     def fetch(self, path: str, fill_result: str = "") -> str:
         server = ThreadingHTTPServer((web.DEFAULT_HOST, 0), web.make_handler())
