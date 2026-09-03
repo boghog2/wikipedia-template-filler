@@ -62,6 +62,12 @@ wikipedia-template-filler pmid 18535242 --add-param-space
 wikipedia-template-filler pmc 137841 --add-param-space
 ```
 
+PubChem CID lookup is implemented through PubChem PUG REST and generates Infobox drug:
+
+```bash
+wikipedia-template-filler pubchem 2244 --add-param-space
+```
+
 HGNC lookup is implemented through the public genenames.org REST API:
 
 ```bash

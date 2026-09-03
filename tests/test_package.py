@@ -23,6 +23,7 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(filler.source_spec("pmc").status, "supported")
         self.assertEqual(filler.source_spec("hgnc").status, "supported")
         self.assertEqual(filler.source_spec("isbn").status, "supported")
+        self.assertEqual(filler.source_spec("pubchem").status, "supported")
         self.assertEqual(filler.source_spec("drugbank").status, "unsupported")
 
     def test_template_filler_normalizes_source_aliases(self):
@@ -30,6 +31,7 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(filler.source_spec("PMID").source_type, "pubmed_id")
         self.assertEqual(filler.source_spec("pmc").source_type, "pubmedcentral_id")
         self.assertEqual(filler.source_spec("HGNC").template, "infobox protein")
+        self.assertEqual(filler.source_spec("drug").template, "Infobox drug")
 
     def test_unknown_source_raises_specific_error(self):
         with self.assertRaisesRegex(UnknownSourceError, "unknown source type"):
