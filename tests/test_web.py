@@ -11,6 +11,7 @@ class WebAppTests(unittest.TestCase):
     def test_render_page_lists_supported_sources(self):
         page = web.render_page(source_type="hgnc", identifier="HGNC:1582")
         self.assertIn("Wikipedia Template Filler", page)
+        self.assertIn("Enter an HGNC ID, ISBN, PubMed ID, PubMed Central ID, or PubChem CID", page)
         self.assertIn("PubMed ID -&gt; cite journal", page)
         self.assertIn("PubMed Central ID -&gt; cite journal", page)
         self.assertIn("HGNC ID -&gt; infobox protein", page)
@@ -22,6 +23,8 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("option value=\"pubchem_id\"", page)
         self.assertIn("select name=\"type\"", page)
         self.assertIn("input name=\"id\"", page)
+        self.assertIn("name=\"add_param_space\"", page)
+        self.assertIn("name=\"vertical\"", page)
         self.assertIn("Data sources", page)
         self.assertIn("{{cite journal}}", page)
         self.assertIn("{{chembox}}", page)

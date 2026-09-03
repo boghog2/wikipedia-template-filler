@@ -109,6 +109,11 @@ h1 {{
   font-weight: 700;
 }}
 .version {{ color: var(--muted); font-size: 14px; }}
+.intro {{
+  margin: -8px 0 18px;
+  color: var(--muted);
+  line-height: 1.45;
+}}
 form {{
   display: grid;
   grid-template-columns: minmax(150px, 220px) minmax(220px, 1fr) auto;
@@ -224,6 +229,7 @@ tr:last-child td {{ border-bottom: 0; }}
     <h1>Wikipedia Template Filler</h1>
     <div class="version">v{html.escape(__version__)}</div>
   </header>
+  <p class="intro">Enter an HGNC ID, ISBN, PubMed ID, PubMed Central ID, or PubChem CID and press Fill to fill out an appropriate template that can be pasted into a Wikipedia article:</p>
   <form method="get" action="/">
     <label>Source
       <select name="type">
