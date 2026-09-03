@@ -20,19 +20,38 @@ Run tests:
 pytest
 ```
 
+List recognized sources:
+
+```bash
+wikipedia-template-filler sources
+wikipedia-template-filler sources --status supported
+```
+
+Generate a template:
+
+```bash
+wikipedia-template-filler fill pmid 18535242 --add-param-space
+```
+
+The legacy positional form also works:
+
+```bash
+wikipedia-template-filler pmid 18535242 --add-param-space
+```
+
 ## Current Status
 
 ISBN lookup is implemented through the Open Library Books API:
 
 ```bash
-PYTHONPATH=src python3 -m wikipedia_template_filler.cli isbn 0721659446 --add-param-space
+wikipedia-template-filler isbn 0721659446 --add-param-space
 ```
 
 PubMed and PubMed Central lookup are implemented through NCBI E-utilities:
 
 ```bash
-PYTHONPATH=src python3 -m wikipedia_template_filler.cli pmid 18535242 --add-param-space
-PYTHONPATH=src python3 -m wikipedia_template_filler.cli pmc 137841 --add-param-space
+wikipedia-template-filler pmid 18535242 --add-param-space
+wikipedia-template-filler pmc 137841 --add-param-space
 ```
 
 HGNC is recognized by the public API but has not been ported yet. DrugBank/drugbox is explicitly unsupported.

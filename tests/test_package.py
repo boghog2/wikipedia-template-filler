@@ -1,6 +1,7 @@
 import contextlib
 import io
 import unittest
+from unittest import mock
 
 import wikipedia_template_filler
 from wikipedia_template_filler import (
@@ -41,6 +42,41 @@ class PackageTests(unittest.TestCase):
             exit_code = main([])
         self.assertEqual(exit_code, 2)
         self.assertIn("Generate Wikipedia template markup", stdout.getvalue())
+
+    def test_cli_lists_sources(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            exit_code = main(["sources"])
+        self.assertEqual(exit_code, 0)
+        self.assertIn("pubmed_id", stdout.getvalue())
+        self.assertIn("pubmedcentral_id", stdout.getvalue())
+        self.assertIn("unsupported", stdout.getvalue())
+
+    def test_cli_filters_sources_by_status(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            exit_code = main(["sources", "--status", "supported"])
+        self.assertEqual(exit_code, 0)
+        self.assertIn("pubmed_id", stdout.getvalue())
+        self.assertNotIn("drugbank_id", stdout.getvalue())
+
+    def test_cli_fill_subcommand_prints_template(self):
+        stdout = io.StringIO()
+        with mock.patch("wikipedia_template_filler.cli.fill", return_value="{{cite journal}}") as fake_fill:
+            with contextlib.redirect_stdout(stdout):
+                exit_code = main(["fill", "pmid", "18535242", "--add-param-space"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout.getvalue(), "{{cite journal}}\n")
+        fake_fill.assert_called_once_with("pmid", "18535242", add_param_space=True, vertical=False)
+
+    def test_cli_legacy_positional_form_still_prints_template(self):
+        stdout = io.StringIO()
+        with mock.patch("wikipedia_template_filler.cli.fill", return_value="{{cite book}}") as fake_fill:
+            with contextlib.redirect_stdout(stdout):
+                exit_code = main(["isbn", "0721659446", "--vertical"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout.getvalue(), "{{cite book}}\n")
+        fake_fill.assert_called_once_with("isbn", "0721659446", add_param_space=False, vertical=True)
 
     def test_cli_reports_api_errors(self):
         stderr = io.StringIO()
