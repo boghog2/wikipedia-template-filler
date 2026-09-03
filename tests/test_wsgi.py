@@ -25,6 +25,20 @@ class WsgiAppTests(unittest.TestCase):
         fake_fill.assert_called_once()
         self.assertEqual(fake_fill.call_args.args[:2], ("pubmed_id", "123455"))
 
+    def test_fill_route_renders_filled_template(self):
+        with mock.patch("wikipedia_template_filler.web.fill", return_value="{{cite journal}}") as fake_fill:
+            status, headers, body = self.call_app(
+                "/fill",
+                "source_type=pmid&identifier=18535242&add_param_space=1",
+            )
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(headers["Content-Type"], "text/html; charset=utf-8")
+        self.assertIn("Paste this into your article:", body)
+        self.assertIn("{{cite journal}}", body)
+        fake_fill.assert_called_once()
+        self.assertEqual(fake_fill.call_args.args[:2], ("pmid", "18535242"))
+        self.assertTrue(fake_fill.call_args.kwargs["add_param_space"])
+
     def test_fill_route_renders_missing_identifier_error(self):
         status, headers, body = self.call_app("/fill", "source_type=pmid")
         self.assertEqual(status, "200 OK")
