@@ -62,6 +62,33 @@ wikipedia-template-filler-web --port 8780
 
 Then open `http://127.0.0.1:8780/`.
 
+## Deployment / Toolforge
+
+Toolforge Python webservices expect a WSGI callable named `app` under `$HOME/www/python/src/app.py` and load Python packages from `$HOME/www/python/venv`. The exact service command should match the active Toolforge Python runtime; the current Toolforge examples use `python3.13`.
+
+A conservative deployment pass is:
+
+```bash
+ssh login.toolforge.org
+become citation-template-filling
+cd $HOME/www/python/src
+git pull
+source $HOME/www/python/venv/bin/activate
+python -m pip install -e .
+python -m pytest
+wikipedia-template-filler smoke
+toolforge webservice python3.13 restart
+toolforge webservice status
+```
+
+After the service is running, check that old Wikipedia links still resolve through the compatibility URLs:
+
+```bash
+python3 scripts/check_toolforge_compatibility.py --base-url https://citation-template-filling.toolforge.org
+```
+
+If startup fails, inspect `$HOME/uwsgi.log`. See the Toolforge docs for [Python webservices](https://wikitech.wikimedia.org/wiki/Help:Toolforge/Web/Python) and the general [`toolforge webservice`](https://wikitech.wikimedia.org/wiki/Help:Toolforge/Web) command.
+
 ## Current Status
 
 ISBN lookup is implemented through the Open Library Books API:
