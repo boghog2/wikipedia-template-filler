@@ -25,6 +25,11 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("option value=\"pubchem_id\"", page)
         self.assertIn("select name=\"type\"", page)
         self.assertIn("input name=\"id\"", page)
+        self.assertIn('<label class="identifier-field">Identifier', page)
+        self.assertIn(".identifier-field { max-width: 340px; }", page)
+        self.assertIn('<button class="submit-button" type="submit">Submist</button>', page)
+        self.assertIn(".submit-button {", page)
+        self.assertIn("padding: 0 8px;", page)
         self.assertIn("name=\"add_param_space\"", page)
         self.assertIn("name=\"vertical\"", page)
         self.assertIn("Data sources", page)
@@ -48,6 +53,12 @@ class WebAppTests(unittest.TestCase):
         self.assertLess(page.index("Paste this into your article:"), page.index('<form method="get" action="/">'))
         self.assertLess(page.index('<textarea id="output"'), page.index('<form method="get" action="/">'))
 
+    def test_render_page_aligns_copy_button_with_output_box(self):
+        page = web.render_page(output="{{cite journal}}")
+        self.assertIn(".copy-row {", page)
+        self.assertIn("width: min(65%, 100%);", page)
+        self.assertLess(page.index(".copy-row {"), page.index(".data-sources {"))
+
     def test_render_page_uses_legacy_wrapper_background(self):
         page = web.render_page()
         self.assertIn("--page: #eeeeff;", page)
@@ -64,6 +75,14 @@ class WebAppTests(unittest.TestCase):
         page = web.render_page()
         self.assertIn("th {", page)
         self.assertIn("text-align: center;", page)
+
+    def test_render_page_standardizes_data_source_cell_text(self):
+        page = web.render_page()
+        self.assertIn(".data-sources td {", page)
+        self.assertIn("font-size: 14px;", page)
+        self.assertIn(".data-sources td code {", page)
+        self.assertIn("font: inherit;", page)
+
 
     def test_render_page_sizes_data_sources_table_to_contents(self):
         page = web.render_page()

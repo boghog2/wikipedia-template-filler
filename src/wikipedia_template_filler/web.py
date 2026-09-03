@@ -118,7 +118,7 @@ h1 {{
 }}
 form {{
   display: grid;
-  grid-template-columns: minmax(150px, 220px) minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(150px, 220px) minmax(220px, 340px) auto;
   gap: 12px;
   align-items: end;
   padding: 18px;
@@ -127,6 +127,7 @@ form {{
   border-radius: 0;
 }}
 label {{ display: grid; gap: 6px; font-weight: 600; font-size: 14px; }}
+.identifier-field {{ max-width: 340px; }}
 select,
 input[type="text"] {{
   width: 100%;
@@ -150,6 +151,11 @@ button {{
   cursor: pointer;
 }}
 button:hover {{ background: var(--accent-strong); }}
+.submit-button {{
+  justify-self: start;
+  min-width: 0;
+  padding: 0 8px;
+}}
 .options {{
   grid-column: 1 / -1;
   display: flex;
@@ -194,6 +200,7 @@ textarea {{
 .copy-row {{
   display: flex;
   justify-content: flex-end;
+  width: min(65%, 100%);
   margin-top: 8px;
 }}
 .data-sources {{
@@ -221,6 +228,14 @@ th, td {{
   text-align: left;
   white-space: nowrap;
 }}
+.data-sources td {{
+  font-size: 14px;
+  line-height: 1.35;
+}}
+.data-sources td a,
+.data-sources td code {{
+  font: inherit;
+}}
 th {{
   color: var(--muted);
   text-align: center;
@@ -246,17 +261,17 @@ tr:last-child td {{ border-bottom: 0; }}
   </header>
   {error_block(error)}
   {result_block(output)}
-  <p class="intro">Enter an HGNC ID, ISBN, PubMed ID, PubMed Central ID, or PubChem CID and press Fill to fill out an appropriate template that can be pasted into a Wikipedia article:</p>
+  <p class="intro">Enter an HGNC ID, ISBN, PubMed ID, PubMed Central ID, or PubChem CID and press Submist to fill out an appropriate template that can be pasted into a Wikipedia article:</p>
   <form method="get" action="/">
     <label>Source
       <select name="type">
         {source_options(source_type)}
       </select>
     </label>
-    <label>Identifier
+    <label class="identifier-field">Identifier
       <input name="id" type="text" value="{html.escape(identifier)}" autocomplete="off" autofocus>
     </label>
-    <button type="submit">Fill</button>
+    <button class="submit-button" type="submit">Submist</button>
     <div class="options">
       <label><input type="checkbox" name="add_param_space" value="1" {checked(add_param_space)}> Parameter spacing</label>
       <label><input type="checkbox" name="vertical" value="1" {checked(vertical)}> Vertical output</label>
