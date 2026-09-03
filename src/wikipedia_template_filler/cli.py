@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import sys
 
 from . import __version__, fill
+from .api import TemplateFillerError
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -25,5 +27,9 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return 2
 
-    print(fill(args.source_type, args.identifier))
+    try:
+        print(fill(args.source_type, args.identifier))
+    except TemplateFillerError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
     return 0
