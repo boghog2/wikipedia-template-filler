@@ -16,6 +16,38 @@ from .api import SUPPORTED_SOURCES, SourceSpec, TemplateFillerError
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8780
 
+SOURCE_VALUES = {
+    "pubmed_id": "pubmed_id",
+    "pubmedcentral_id": "pubmedcentral_id",
+    "hgnc_id": "hgnc_id",
+    "isbn": "isbn",
+    "pubchem_cid": "pubchem",
+    "pubchem_id": "pubchem_id",
+    "url": "url",
+    "drugbank_id": "drugbank_id",
+}
+SOURCE_LABELS = {
+    "drugbank_id": "DrugBank ID",
+    "hgnc_id": "HGNC ID",
+    "isbn": "ISBN",
+    "pubmed_id": "PubMed ID",
+    "pubmedcentral_id": "PubMed Central ID",
+    "pubchem_cid": "PubChem CID",
+    "pubchem_id": "PubChem CID",
+    "url": "URL",
+}
+SOURCE_EXAMPLES = {
+    "drugbank_id": "DB00328",
+    "hgnc_id": "12403",
+    "isbn": "0721659446",
+    "pubmed_id": "123455",
+    "pubmedcentral_id": "137841",
+    "pubchem_cid": "2244",
+    "pubchem_id": "2244",
+    "url": "http://en.wikipedia.org",
+}
+
+
 
 def supported_sources() -> tuple[SourceSpec, ...]:
     """Return sources that can currently generate templates."""
@@ -148,6 +180,35 @@ textarea {{
   justify-content: flex-end;
   margin-top: 8px;
 }}
+.data-sources {{
+  margin-top: 18px;
+  overflow-x: auto;
+}}
+.data-sources h2 {{
+  margin: 0 0 10px;
+  font-size: 18px;
+}}
+table {{
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}}
+th, td {{
+  border-bottom: 1px solid var(--line);
+  padding: 9px 10px;
+  text-align: left;
+  white-space: nowrap;
+}}
+th {{
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}}
+tr:last-child td {{ border-bottom: 0; }}
+.status-pending, .status-unsupported {{ color: var(--muted); }}
 .secondary {{ background: #435062; }}
 .secondary:hover {{ background: #303b4b; }}
 @media (max-width: 760px) {{
@@ -178,6 +239,7 @@ textarea {{
       <label><input type="checkbox" name="vertical" value="1" {checked(vertical)}> Vertical output</label>
     </div>
   </form>
+  {data_sources_table()}
   {result_block(output)}
   {error_block(error)}
 </main>
@@ -199,22 +261,43 @@ if (copyButton) {{
 
 def source_options(selected: str) -> str:
     """Render option tags for supported sources."""
-    aliases = {"pubmed_id": "pmid", "pubmedcentral_id": "pmc", "hgnc_id": "hgnc", "isbn": "isbn", "pubchem_cid": "pubchem", "pubchem_id": "chembox"}
-    labels = {
-        "pubmed_id": "PubMed ID",
-        "pubmedcentral_id": "PubMed Central ID",
-        "hgnc_id": "HGNC ID",
-        "isbn": "ISBN",
-        "pubchem_cid": "PubChem CID",
-        "pubchem_id": "PubChem CID",
-    }
     options = []
     for spec in supported_sources():
-        value = aliases.get(spec.source_type, spec.source_type)
-        label = f"{labels.get(spec.source_type, spec.source_type)} -> {spec.template}"
+        value = SOURCE_VALUES.get(spec.source_type, spec.source_type)
+        label = f"{SOURCE_LABELS.get(spec.source_type, spec.source_type)} -> {spec.template}"
         selected_attr = " selected" if selected in (value, spec.source_type, *spec.aliases) else ""
         options.append(f'<option value="{html.escape(value)}"{selected_attr}>{html.escape(label)}</option>')
     return "\n        ".join(options)
+
+
+def data_sources_table() -> str:
+    """Render a compact table of recognized legacy data sources."""
+    rows = "\n".join(data_source_row(spec) for spec in SUPPORTED_SOURCES)
+    return f"""<section class="data-sources">
+    <h2>Data sources</h2>
+    <table>
+      <thead><tr><th>Data source</th><th>URL type</th><th>Template</th><th>Example ID</th><th>Status</th></tr></thead>
+      <tbody>
+        {rows}
+      </tbody>
+    </table>
+  </section>"""
+
+
+def data_source_row(spec: SourceSpec) -> str:
+    """Render one data-source table row."""
+    label = SOURCE_LABELS.get(spec.source_type, spec.source_type)
+    value = SOURCE_VALUES.get(spec.source_type, spec.source_type)
+    example = SOURCE_EXAMPLES.get(spec.source_type, "")
+    return (
+        f"<tr class=\"status-{html.escape(spec.status)}\">"
+        f"<td>{html.escape(label)}</td>"
+        f"<td><code>{html.escape(value)}</code></td>"
+        f"<td><code>{html.escape(spec.template)}</code></td>"
+        f"<td><code>{html.escape(example)}</code></td>"
+        f"<td>{html.escape(spec.status)}</td>"
+        "</tr>"
+    )
 
 
 def checked(value: bool) -> str:
