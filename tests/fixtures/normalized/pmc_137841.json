@@ -1,0 +1,55 @@
+{
+  "source_type": "pubmedcentral_id",
+  "id": "137841",
+  "template": "cite journal",
+  "golden": "pmc_137841.json",
+  "options": {
+    "add_param_space": true
+  },
+  "fields": [
+    {
+      "name": "vauthors",
+      "value": "Dworkin J, Losick R"
+    },
+    {
+      "name": "title",
+      "value": "Does RNA polymerase help drive chromosome segregation in bacteria?"
+    },
+    {
+      "name": "journal",
+      "value": "Proc Natl Acad Sci U S A"
+    },
+    {
+      "name": "volume",
+      "value": "99"
+    },
+    {
+      "name": "issue",
+      "value": "22"
+    },
+    {
+      "name": "pages",
+      "value": "14089–94"
+    },
+    {
+      "name": "date",
+      "value": "October 2002"
+    },
+    {
+      "name": "pmid",
+      "value": "12384568"
+    },
+    {
+      "name": "pmc",
+      "value": "137841"
+    },
+    {
+      "name": "doi",
+      "value": "10.1073/pnas.182539899"
+    },
+    {
+      "name": "url",
+      "value": ""
+    }
+  ]
+}

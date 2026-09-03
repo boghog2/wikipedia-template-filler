@@ -1,0 +1,51 @@
+{
+  "source_type": "isbn",
+  "id": "0721659446",
+  "template": "cite book",
+  "golden": "isbn_0721659446_cite_book.json",
+  "options": {
+    "add_param_space": true
+  },
+  "fields": [
+    {
+      "name": "vauthors",
+      "value": "Guyton AC, Hall JE"
+    },
+    {
+      "name": "title",
+      "value": "Textbook of medical physiology"
+    },
+    {
+      "name": "publisher",
+      "value": "W.B. Saunders"
+    },
+    {
+      "name": "location",
+      "value": "Philadelphia"
+    },
+    {
+      "name": "year",
+      "value": "1996"
+    },
+    {
+      "name": "pages",
+      "value": "1148"
+    },
+    {
+      "name": "isbn",
+      "value": "0721659446"
+    },
+    {
+      "name": "oclc",
+      "value": "31378424"
+    },
+    {
+      "name": "doi",
+      "value": ""
+    },
+    {
+      "name": "accessdate",
+      "value": ""
+    }
+  ]
+}

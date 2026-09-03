@@ -1,0 +1,55 @@
+{
+  "source_type": "pubmed_id",
+  "id": "18535242",
+  "template": "cite journal",
+  "golden": "pubmed_18535242.json",
+  "options": {
+    "add_param_space": true
+  },
+  "fields": [
+    {
+      "name": "vauthors",
+      "value": "Schermelleh L, Carlton PM, Haase S, Shao L, Winoto L, Kner P, Burke B, Cardoso MC, Agard DA, Gustafsson MG, Leonhardt H, Sedat JW"
+    },
+    {
+      "name": "title",
+      "value": "Subdiffraction multicolor imaging of the nuclear periphery with 3D structured illumination microscopy"
+    },
+    {
+      "name": "journal",
+      "value": "Science"
+    },
+    {
+      "name": "volume",
+      "value": "320"
+    },
+    {
+      "name": "issue",
+      "value": "5881"
+    },
+    {
+      "name": "pages",
+      "value": "1332–6"
+    },
+    {
+      "name": "date",
+      "value": "June 2008"
+    },
+    {
+      "name": "pmid",
+      "value": "18535242"
+    },
+    {
+      "name": "pmc",
+      "value": "2916659"
+    },
+    {
+      "name": "doi",
+      "value": "10.1126/science.1156947"
+    },
+    {
+      "name": "url",
+      "value": ""
+    }
+  ]
+}
