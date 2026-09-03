@@ -107,6 +107,44 @@ class PackageTests(unittest.TestCase):
         self.assertIn("pubmed_id\t18535242", stdout.getvalue())
         self.assertIn("pubchem_id\t2244", stdout.getvalue())
 
+    def test_toolforge_compatibility_script_lists_cases_without_network(self):
+        script_path = Path(__file__).resolve().parent.parent / "scripts" / "check_toolforge_compatibility.py"
+        stdout = io.StringIO()
+        with mock.patch.object(sys, "argv", [str(script_path), "--list"]):
+            namespace = runpy.run_path(str(script_path), run_name="toolforge_compatibility_test")
+            with contextlib.redirect_stdout(stdout):
+                exit_code = namespace["main"]()
+        self.assertEqual(exit_code, 0)
+        self.assertIn("legacy CGI PubMed URL", stdout.getvalue())
+        self.assertIn("/cgi-bin/index.cgi?ddb=&type=pubmed_id", stdout.getvalue())
+
+    def test_toolforge_compatibility_runner_accepts_expected_output(self):
+        script_path = Path(__file__).resolve().parent.parent / "scripts" / "check_toolforge_compatibility.py"
+        namespace = runpy.run_path(str(script_path), run_name="toolforge_compatibility_test")
+        case = namespace["CompatibilityCase"]("example old URL", "/?type=pubmed_id&id=1", "needle")
+        calls = []
+
+        def fake_fetch(url: str) -> str:
+            calls.append(url)
+            return "prefix needle suffix"
+
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            exit_code = namespace["run_checks"]("http://example.test", cases=(case,), fetch_func=fake_fetch)
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(calls, ["http://example.test/?type=pubmed_id&id=1"])
+        self.assertIn("OK   example old URL", stdout.getvalue())
+
+    def test_toolforge_compatibility_runner_fails_on_unexpected_output(self):
+        script_path = Path(__file__).resolve().parent.parent / "scripts" / "check_toolforge_compatibility.py"
+        namespace = runpy.run_path(str(script_path), run_name="toolforge_compatibility_test")
+        case = namespace["CompatibilityCase"]("example old URL", "/?type=pubmed_id&id=1", "needle")
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            exit_code = namespace["run_checks"]("http://example.test", cases=(case,), fetch_func=lambda url: "wrong")
+        self.assertEqual(exit_code, 1)
+        self.assertIn("expected", stderr.getvalue())
+
     def test_smoke_runner_accepts_expected_output(self):
         def fake_fill(source_type: str, identifier: str, **options: object) -> str:
             case = next(case for case in SMOKE_CASES if case.source_type == source_type)

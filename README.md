@@ -28,6 +28,13 @@ wikipedia-template-filler smoke
 python3 scripts/smoke_supported_sources.py
 ```
 
+Check old Toolforge-style URLs against a running web app before deployment:
+
+```bash
+python3 scripts/check_toolforge_compatibility.py --base-url http://127.0.0.1:8780
+python3 scripts/check_toolforge_compatibility.py --base-url https://citation-template-filling.toolforge.org
+```
+
 List recognized sources:
 
 ```bash
