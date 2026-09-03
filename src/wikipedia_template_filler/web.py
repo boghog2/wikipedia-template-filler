@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import html
 import sys
+from collections.abc import Callable
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
@@ -431,6 +432,43 @@ def renderer_options(params: dict[str, list[str]]) -> dict[str, bool]:
     return options
 
 
+def render_fill_page(
+    params: dict[str, list[str]],
+    *,
+    fill_func: Callable[..., str] | None = None,
+) -> str:
+    """Render the filled-template page for web and WSGI entry points."""
+    source_type = query_value(params, "source_type", "type", default="pmid")
+    identifier = query_value(params, "identifier", "id")
+    options = renderer_options(params)
+    add_param_space = options["add_param_space"]
+    vertical = options["vertical"]
+    output = ""
+    error = ""
+
+    if not identifier:
+        error = "Enter an identifier."
+    else:
+        try:
+            live_fill = fill if fill_func is None else fill_func
+            output = live_fill(
+                source_type,
+                identifier,
+                **options,
+            )
+        except TemplateFillerError as exc:
+            error = str(exc)
+
+    return render_page(
+        source_type=source_type,
+        identifier=identifier,
+        add_param_space=add_param_space,
+        vertical=vertical,
+        output=output,
+        error=error,
+    )
+
+
 def make_handler() -> type[BaseHTTPRequestHandler]:
     """Create a request handler bound to the template-filler API."""
 
@@ -449,36 +487,7 @@ def make_handler() -> type[BaseHTTPRequestHandler]:
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
         def handle_fill(self, params: dict[str, list[str]]) -> None:
-            source_type = query_value(params, "source_type", "type", default="pmid")
-            identifier = query_value(params, "identifier", "id")
-            options = renderer_options(params)
-            add_param_space = options["add_param_space"]
-            vertical = options["vertical"]
-            output = ""
-            error = ""
-
-            if not identifier:
-                error = "Enter an identifier."
-            else:
-                try:
-                    output = fill(
-                        source_type,
-                        identifier,
-                        **options,
-                    )
-                except TemplateFillerError as exc:
-                    error = str(exc)
-
-            self.respond_html(
-                render_page(
-                    source_type=source_type,
-                    identifier=identifier,
-                    add_param_space=add_param_space,
-                    vertical=vertical,
-                    output=output,
-                    error=error,
-                )
-            )
+            self.respond_html(render_fill_page(params))
 
         def respond_html(self, body: str) -> None:
             data = body.encode("utf-8")

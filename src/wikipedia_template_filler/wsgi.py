@@ -1,0 +1,57 @@
+"""WSGI entry point for Toolforge and other Python webservers."""
+
+from __future__ import annotations
+
+from collections.abc import Callable, Iterable
+from http import HTTPStatus
+from urllib.parse import parse_qs
+
+from .web import render_fill_page, render_page
+
+ROUTES = {"/", "/fill", "/cgi-bin/index.cgi"}
+
+
+def app(environ: dict[str, object], start_response: Callable[..., object]) -> Iterable[bytes]:
+    """Serve the template-filler web interface as a WSGI application."""
+    method = str(environ.get("REQUEST_METHOD", "GET")).upper()
+    if method not in {"GET", "HEAD"}:
+        return respond(
+            start_response,
+            HTTPStatus.METHOD_NOT_ALLOWED,
+            "Method not allowed",
+            method,
+            headers=[("Allow", "GET, HEAD")],
+        )
+
+    path = str(environ.get("PATH_INFO", "/") or "/")
+    query_string = str(environ.get("QUERY_STRING", ""))
+    if path not in ROUTES:
+        return respond(start_response, HTTPStatus.NOT_FOUND, "Not found", method)
+
+    params = parse_qs(query_string)
+    if path == "/" and not params:
+        body = render_page()
+    else:
+        body = render_fill_page(params)
+    return respond(start_response, HTTPStatus.OK, body, method)
+
+
+def respond(
+    start_response: Callable[..., object],
+    status: HTTPStatus,
+    body: str,
+    method: str,
+    *,
+    headers: list[tuple[str, str]] | None = None,
+) -> Iterable[bytes]:
+    data = body.encode("utf-8")
+    response_headers = [
+        ("Content-Type", "text/html; charset=utf-8"),
+        ("Content-Length", str(len(data))),
+    ]
+    if headers:
+        response_headers.extend(headers)
+    start_response(f"{status.value} {status.phrase}", response_headers)
+    if method == "HEAD":
+        return []
+    return [data]

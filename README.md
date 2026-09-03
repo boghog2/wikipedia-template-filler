@@ -64,7 +64,7 @@ Then open `http://127.0.0.1:8780/`.
 
 ## Deployment / Toolforge
 
-Toolforge Python webservices expect a WSGI callable named `app` under `$HOME/www/python/src/app.py` and load Python packages from `$HOME/www/python/venv`. The exact service command should match the active Toolforge Python runtime; the current Toolforge examples use `python3.13`.
+Toolforge Python webservices expect a WSGI callable named `app` under `$HOME/www/python/src/app.py` and load Python packages from `$HOME/www/python/venv`. This repository includes a top-level `app.py` shim that exports `wikipedia_template_filler.wsgi.app` for that purpose. The exact service command should match the active Toolforge Python runtime; the current Toolforge examples use `python3.13`.
 
 A conservative deployment pass is:
 
