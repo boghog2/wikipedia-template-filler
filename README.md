@@ -20,6 +20,14 @@ Run tests:
 pytest
 ```
 
+Run live smoke checks against supported upstream sources before deployment:
+
+```bash
+wikipedia-template-filler smoke --list
+wikipedia-template-filler smoke
+python3 scripts/smoke_supported_sources.py
+```
+
 List recognized sources:
 
 ```bash

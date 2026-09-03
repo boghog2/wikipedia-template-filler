@@ -1,6 +1,9 @@
 import contextlib
 import io
+import runpy
+import sys
 import unittest
+from pathlib import Path
 from unittest import mock
 
 import wikipedia_template_filler
@@ -10,7 +13,7 @@ from wikipedia_template_filler import (
     UnsupportedSourceError,
     fill,
 )
-from wikipedia_template_filler.cli import main
+from wikipedia_template_filler.cli import SMOKE_CASES, main, run_smoke_cases
 
 
 class PackageTests(unittest.TestCase):
@@ -85,6 +88,44 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(stdout.getvalue(), "{{cite book}}\n")
         fake_fill.assert_called_once_with("isbn", "0721659446", add_param_space=False, vertical=True)
+
+    def test_smoke_script_lists_cases_without_live_network(self):
+        script_path = Path(__file__).resolve().parent.parent / "scripts" / "smoke_supported_sources.py"
+        stdout = io.StringIO()
+        with mock.patch.object(sys, "argv", [str(script_path), "--list"]):
+            namespace = runpy.run_path(str(script_path), run_name="smoke_supported_sources_test")
+            with contextlib.redirect_stdout(stdout):
+                exit_code = namespace["main"]()
+        self.assertEqual(exit_code, 0)
+        self.assertIn("pubmed_id\t18535242", stdout.getvalue())
+
+    def test_cli_lists_smoke_cases_without_live_network(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            exit_code = main(["smoke", "--list"])
+        self.assertEqual(exit_code, 0)
+        self.assertIn("pubmed_id\t18535242", stdout.getvalue())
+        self.assertIn("pubchem_id\t2244", stdout.getvalue())
+
+    def test_smoke_runner_accepts_expected_output(self):
+        def fake_fill(source_type: str, identifier: str, **options: object) -> str:
+            case = next(case for case in SMOKE_CASES if case.source_type == source_type)
+            self.assertTrue(options["add_param_space"])
+            self.assertFalse(options["vertical"])
+            return f"{case.expected_text}}}"
+
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            exit_code = run_smoke_cases(fill_func=fake_fill)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("OK   PubMed ID -> cite journal", stdout.getvalue())
+
+    def test_smoke_runner_fails_on_unexpected_output(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            exit_code = run_smoke_cases(SMOKE_CASES[:1], fill_func=lambda *args, **kwargs: "wrong template")
+        self.assertEqual(exit_code, 1)
+        self.assertIn("expected", stderr.getvalue())
 
     def test_cli_reports_api_errors(self):
         stderr = io.StringIO()
