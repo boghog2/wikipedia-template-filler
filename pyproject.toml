@@ -31,6 +31,7 @@ dev = [
 
 [project.scripts]
 wikipedia-template-filler = "wikipedia_template_filler.cli:main"
+wikipedia-template-filler-web = "wikipedia_template_filler.web:main"
 
 [project.urls]
 Homepage = "https://github.com/boghog2/wikipedia-template-filler"

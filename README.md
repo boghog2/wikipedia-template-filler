@@ -39,6 +39,14 @@ The legacy positional form also works:
 wikipedia-template-filler pmid 18535242 --add-param-space
 ```
 
+Run the local web app:
+
+```bash
+wikipedia-template-filler-web --port 8780
+```
+
+Then open `http://127.0.0.1:8780/`.
+
 ## Current Status
 
 ISBN lookup is implemented through the Open Library Books API:
