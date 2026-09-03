@@ -33,7 +33,7 @@ def pubmed_xml() -> str:
 <PubmedArticleSet>
 <PubmedArticle>
 <MedlineCitation><PMID>18535242</PMID><Article>
-<Journal><JournalIssue><Volume>320</Volume><Issue>5881</Issue><PubDate><Year>2008</Year><Month>Jun</Month></PubDate></JournalIssue><ISOAbbreviation>Science</ISOAbbreviation></Journal>
+<Journal><JournalIssue><Volume>320</Volume><Issue>5881</Issue><PubDate><Year>2008</Year><Month>Jun</Month></PubDate></JournalIssue><Title>Science</Title><ISOAbbreviation>Science</ISOAbbreviation></Journal>
 <ArticleTitle>Subdiffraction multicolor imaging of the nuclear periphery with 3D structured illumination microscopy.</ArticleTitle>
 <Pagination><MedlinePgn>1332-6</MedlinePgn></Pagination>
 <AuthorList>
@@ -81,7 +81,7 @@ def pmc_pubmed_xml() -> str:
 <PubmedArticleSet>
 <PubmedArticle>
 <MedlineCitation><PMID>12384568</PMID><Article>
-<Journal><JournalIssue><Volume>99</Volume><Issue>22</Issue><PubDate><Year>2002</Year><Month>Oct</Month></PubDate></JournalIssue><ISOAbbreviation>Proc Natl Acad Sci U S A</ISOAbbreviation></Journal>
+<Journal><JournalIssue><Volume>99</Volume><Issue>22</Issue><PubDate><Year>2002</Year><Month>Oct</Month></PubDate></JournalIssue><Title>Proceedings of the National Academy of Sciences of the United States of America</Title><ISOAbbreviation>Proc Natl Acad Sci U S A</ISOAbbreviation></Journal>
 <ArticleTitle>Does RNA polymerase help drive chromosome segregation in bacteria?</ArticleTitle>
 <Pagination><MedlinePgn>14089-94</MedlinePgn></Pagination>
 <AuthorList>
@@ -136,6 +136,15 @@ class PubMedTests(unittest.TestCase):
 
         self.assertEqual(fill_pubmed(golden["id"], xml_fetcher=fake_fetcher, **golden["options"]), golden["output"])
 
+    def test_fill_pubmed_can_use_full_journal_title(self):
+        output = fill_pubmed(
+            "18535242",
+            xml_fetcher=lambda url: pubmed_xml(),
+            add_param_space=True,
+            full_journal_title=True,
+        )
+        self.assertIn("| journal = Science |", output)
+
     def test_fetch_raises_for_missing_article(self):
         with self.assertRaisesRegex(SourceLookupError, "no article matches"):
             parse_pubmed_article("<PubmedArticleSet />", expected_pmid="1")
@@ -161,6 +170,21 @@ class PubMedTests(unittest.TestCase):
             return pmc_pubmed_xml()
 
         self.assertEqual(fill_pmc(f"PMC{golden['id']}", xml_fetcher=fake_fetcher, **golden["options"]), golden["output"])
+
+    def test_fill_pmc_can_use_full_journal_title(self):
+        def fake_fetcher(url: str) -> str:
+            if url == pmc_to_pubmed_url("137841"):
+                return pmc_link_xml()
+            return pmc_pubmed_xml()
+
+        output = fill_pmc(
+            "PMC137841",
+            xml_fetcher=fake_fetcher,
+            add_param_space=True,
+            full_journal_title=True,
+        )
+        self.assertIn("| journal = Proceedings of the National Academy of Sciences of the United States of America |", output)
+        self.assertNotIn("| journal = Proc Natl Acad Sci U S A |", output)
 
     def test_fetch_raises_when_pmc_has_no_linked_pubmed_article(self):
         with self.assertRaisesRegex(SourceLookupError, "no PubMed article is linked"):

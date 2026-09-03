@@ -45,6 +45,7 @@ class PubMedArticle:
     vauthors: str
     title: str
     journal: str
+    journal_title: str
     volume: str
     issue: str
     pages: str
@@ -84,7 +85,7 @@ def render_article(article: PubMedArticle, **options: object) -> str:
     """Render normalized article data as a ``{{cite journal}}`` template."""
     return render_template(
         "cite journal",
-        article_fields(article),
+        article_fields(article, full_journal_title=bool(options.get("full_journal_title", False))),
         add_param_space=bool(options.get("add_param_space", False)),
         vertical=bool(options.get("vertical", False)),
     )
@@ -165,6 +166,7 @@ def parse_pubmed_article(xml: str, *, expected_pmid: str | None = None) -> PubMe
         vauthors=vancouver_authors(article.find("AuthorList") if article is not None else None),
         title=strip_trailing_period(text(article.find("ArticleTitle") if article is not None else None)),
         journal=text(journal.find("ISOAbbreviation") if journal is not None else None),
+        journal_title=text(journal.find("Title") if journal is not None else None),
         volume=text(journal.find("JournalIssue/Volume") if journal is not None else None),
         issue=text(journal.find("JournalIssue/Issue") if journal is not None else None),
         pages=normalize_pages(text(article.find("Pagination/MedlinePgn") if article is not None else None)),
@@ -175,12 +177,13 @@ def parse_pubmed_article(xml: str, *, expected_pmid: str | None = None) -> PubMe
     )
 
 
-def article_fields(article: PubMedArticle) -> list[tuple[str, str]]:
+def article_fields(article: PubMedArticle, *, full_journal_title: bool = False) -> list[tuple[str, str]]:
     """Return ordered ``{{cite journal}}`` fields for a PubMed article."""
+    journal = article.journal_title if full_journal_title and article.journal_title else article.journal
     return [
         ("vauthors", article.vauthors),
         ("title", article.title),
-        ("journal", article.journal),
+        ("journal", journal),
         ("volume", article.volume),
         ("issue", article.issue),
         ("pages", article.pages),
