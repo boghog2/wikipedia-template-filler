@@ -8,7 +8,7 @@ import sys
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 
 from . import __version__, fill
 from .api import SUPPORTED_SOURCES, SourceSpec, TemplateFillerError
@@ -39,7 +39,7 @@ SOURCE_LABELS = {
 SOURCE_EXAMPLES = {
     "drugbank_id": "DB00328",
     "hgnc_id": "12403",
-    "isbn": "0721659446",
+    "isbn": "0-7216-5944-6",
     "pubmed_id": "123455",
     "pubmedcentral_id": "137841",
     "pubchem_cid": "2244",
@@ -272,11 +272,11 @@ def source_options(selected: str) -> str:
 
 def data_sources_table() -> str:
     """Render a compact table of recognized legacy data sources."""
-    rows = "\n".join(data_source_row(spec) for spec in SUPPORTED_SOURCES)
+    rows = "\n".join(data_source_row(spec) for spec in supported_sources())
     return f"""<section class="data-sources">
     <h2>Data sources</h2>
     <table>
-      <thead><tr><th>Data source</th><th>URL type</th><th>Template</th><th>Example ID</th><th>Status</th></tr></thead>
+      <thead><tr><th>Data source</th><th>Template</th><th>Example ID</th></tr></thead>
       <tbody>
         {rows}
       </tbody>
@@ -289,15 +289,26 @@ def data_source_row(spec: SourceSpec) -> str:
     label = SOURCE_LABELS.get(spec.source_type, spec.source_type)
     value = SOURCE_VALUES.get(spec.source_type, spec.source_type)
     example = SOURCE_EXAMPLES.get(spec.source_type, "")
+    href = example_href(spec)
     return (
         f"<tr class=\"status-{html.escape(spec.status)}\">"
         f"<td>{html.escape(label)}</td>"
-        f"<td><code>{html.escape(value)}</code></td>"
-        f"<td><code>{html.escape(spec.template)}</code></td>"
-        f"<td><code>{html.escape(example)}</code></td>"
-        f"<td>{html.escape(spec.status)}</td>"
+        f"<td><code>{{{{{html.escape(spec.template)}}}}}</code></td>"
+        f"<td><a href=\"{html.escape(href, quote=True)}\"><code>{html.escape(example)}</code></a></td>"
         "</tr>"
     )
+
+
+def example_href(spec: SourceSpec) -> str:
+    """Return a fill URL for a table example using legacy query names."""
+    query = {
+        "type": SOURCE_VALUES.get(spec.source_type, spec.source_type),
+        "id": SOURCE_EXAMPLES.get(spec.source_type, ""),
+        "add_param_space": "1",
+    }
+    if spec.source_type == "pubchem_id":
+        query["add_iupac_name"] = "1"
+    return f"/?{urlencode(query)}"
 
 
 def checked(value: bool) -> str:

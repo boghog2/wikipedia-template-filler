@@ -43,7 +43,7 @@ SUPPORTED_SOURCES: tuple[SourceSpec, ...] = (
     ),
     SourceSpec("hgnc_id", "infobox protein", "supported", aliases=("hgnc",)),
     SourceSpec("isbn", "cite book", "supported"),
-    SourceSpec("pubchem_cid", "Infobox drug", "supported", aliases=("pubchem", "cid", "drug")),
+    SourceSpec("pubchem_cid", "infobox drug", "supported", aliases=("pubchem", "cid", "drug")),
     SourceSpec("pubchem_id", "chembox", "supported", aliases=("chembox", "pubchem_chembox")),
     SourceSpec("url", "cite web", "pending", aliases=("cite_web", "web")),
     SourceSpec(
