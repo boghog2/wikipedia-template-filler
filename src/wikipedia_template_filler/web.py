@@ -110,6 +110,7 @@ h1 {{
   font-weight: 700;
 }}
 .version {{ color: var(--muted); font-size: 14px; }}
+.runtime {{ margin-left: 8px; }}
 .intro {{
   margin: -8px 0 18px;
   color: var(--muted);
@@ -165,8 +166,8 @@ button:hover {{ background: var(--accent-strong); }}
 .result {{
   margin: 0 0 18px;
   padding: 0 0 12px;
-  border-top: 2px solid #ccc;
-  border-bottom: 2px solid #ccc;
+  border-top: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
 }}
 .paste-label {{
   margin: 12px 0;
@@ -197,6 +198,8 @@ textarea {{
 }}
 .data-sources {{
   margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid #ccc;
   overflow-x: auto;
 }}
 .data-sources h2 {{
@@ -220,6 +223,7 @@ th, td {{
 }}
 th {{
   color: var(--muted);
+  text-align: center;
   font-size: 13px;
   font-weight: 700;
 }}
@@ -238,7 +242,7 @@ tr:last-child td {{ border-bottom: 0; }}
 <main>
   <header>
     <h1>Wikipedia Template Filler</h1>
-    <div class="version">v{html.escape(__version__)}</div>
+    <div class="version">v{html.escape(__version__)} <span class="runtime">python</span></div>
   </header>
   {error_block(error)}
   {result_block(output)}

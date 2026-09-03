@@ -12,6 +12,7 @@ class WebAppTests(unittest.TestCase):
     def test_render_page_lists_supported_sources(self):
         page = web.render_page(source_type="hgnc", identifier="HGNC:1582")
         self.assertIn("Wikipedia Template Filler", page)
+        self.assertIn('<div class="version">v0.1.0 <span class="runtime">python</span></div>', page)
         self.assertIn("Enter an HGNC ID, ISBN, PubMed ID, PubMed Central ID, or PubChem CID", page)
         self.assertIn("PubMed ID -&gt; cite journal", page)
         self.assertIn("PubMed Central ID -&gt; cite journal", page)
@@ -51,6 +52,18 @@ class WebAppTests(unittest.TestCase):
         page = web.render_page()
         self.assertIn("--page: #eeeeff;", page)
         self.assertIn("border: 1px solid var(--line);", page)
+
+    def test_render_page_uses_thin_legacy_section_separators(self):
+        page = web.render_page(output="{{cite journal}}")
+        self.assertIn("border-top: 1px solid #ccc;", page)
+        self.assertIn("border-bottom: 1px solid #ccc;", page)
+        self.assertIn(".data-sources {", page)
+        self.assertIn("padding-top: 12px;", page)
+
+    def test_render_page_centers_table_headings(self):
+        page = web.render_page()
+        self.assertIn("th {", page)
+        self.assertIn("text-align: center;", page)
 
     def test_render_page_sizes_data_sources_table_to_contents(self):
         page = web.render_page()
