@@ -41,6 +41,23 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("&lt;bad&gt;", page)
         self.assertIn("x &lt; y", page)
 
+    def test_render_page_places_output_above_form_like_legacy_cgi(self):
+        page = web.render_page(output="{{cite journal}}")
+        self.assertIn("Paste this into your article:", page)
+        self.assertLess(page.index("Paste this into your article:"), page.index('<form method="get" action="/">'))
+        self.assertLess(page.index('<textarea id="output"'), page.index('<form method="get" action="/">'))
+
+    def test_render_page_uses_legacy_wrapper_background(self):
+        page = web.render_page()
+        self.assertIn("--page: #eeeeff;", page)
+        self.assertIn("border: 1px solid var(--line);", page)
+
+    def test_render_page_sizes_data_sources_table_to_contents(self):
+        page = web.render_page()
+        self.assertIn(".data-sources table {", page)
+        self.assertIn("width: max-content;", page)
+        self.assertIn("white-space: nowrap;", page)
+
     def test_render_page_preserves_pending_selection(self):
         page = web.render_page(source_type="url", identifier="https://example.org")
         self.assertIn('<option value="url" selected disabled>URL -&gt; cite web (pending)</option>', page)

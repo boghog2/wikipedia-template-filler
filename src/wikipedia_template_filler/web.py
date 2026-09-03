@@ -75,9 +75,9 @@ def render_page(
   color-scheme: light;
   --ink: #18212f;
   --muted: #5e6a78;
-  --line: #d9dee7;
-  --panel: #ffffff;
-  --page: #f6f7f9;
+  --line: #ccccff;
+  --panel: #eeeeff;
+  --page: #eeeeff;
   --accent: #1f6f78;
   --accent-strong: #15545b;
   --danger: #9f2f2f;
@@ -87,24 +87,25 @@ body {{
   margin: 0;
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--page);
+  background: #fff;
   color: var(--ink);
 }}
 main {{
-  width: min(980px, calc(100vw - 32px));
-  margin: 0 auto;
-  padding: 32px 0;
+  margin: 5px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  background: var(--page);
 }}
 header {{
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: baseline;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }}
 h1 {{
   margin: 0;
-  font-size: 28px;
+  font-size: 16pt;
   line-height: 1.15;
   font-weight: 700;
 }}
@@ -121,8 +122,8 @@ form {{
   align-items: end;
   padding: 18px;
   background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 0;
+  border-radius: 0;
 }}
 label {{ display: grid; gap: 6px; font-weight: 600; font-size: 14px; }}
 select,
@@ -161,16 +162,25 @@ button:hover {{ background: var(--accent-strong); }}
   gap: 8px;
   font-weight: 500;
 }}
-.result {{ margin-top: 18px; }}
+.result {{
+  margin: 0 0 18px;
+  padding: 0 0 12px;
+  border-top: 2px solid #ccc;
+  border-bottom: 2px solid #ccc;
+}}
+.paste-label {{
+  margin: 12px 0;
+  font-weight: 700;
+}}
 textarea {{
-  width: 100%;
-  min-height: 180px;
+  width: min(65%, 100%);
+  min-height: 15em;
   resize: vertical;
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 14px;
   font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  background: var(--panel);
+  background: #fff;
   color: var(--ink);
 }}
 .error {{
@@ -193,8 +203,9 @@ textarea {{
   margin: 0 0 10px;
   font-size: 18px;
 }}
-table {{
-  width: 100%;
+.data-sources table {{
+  width: max-content;
+  max-width: none;
   border-collapse: collapse;
   background: var(--panel);
   border: 1px solid var(--line);
@@ -229,6 +240,8 @@ tr:last-child td {{ border-bottom: 0; }}
     <h1>Wikipedia Template Filler</h1>
     <div class="version">v{html.escape(__version__)}</div>
   </header>
+  {error_block(error)}
+  {result_block(output)}
   <p class="intro">Enter an HGNC ID, ISBN, PubMed ID, PubMed Central ID, or PubChem CID and press Fill to fill out an appropriate template that can be pasted into a Wikipedia article:</p>
   <form method="get" action="/">
     <label>Source
@@ -246,8 +259,6 @@ tr:last-child td {{ border-bottom: 0; }}
     </div>
   </form>
   {data_sources_table()}
-  {result_block(output)}
-  {error_block(error)}
 </main>
 <script>
 const copyButton = document.querySelector('[data-copy-output]');
@@ -349,6 +360,7 @@ def result_block(output: str) -> str:
         return ""
     escaped = html.escape(output)
     return f"""<section class="result">
+    <p class="paste-label">Paste this into your article:</p>
     <textarea id="output" readonly>{escaped}</textarea>
     <div class="copy-row"><button class="secondary" type="button" data-copy-output>Copy</button></div>
   </section>"""
