@@ -132,7 +132,7 @@ def pmc_to_pubmed_url(pmcid: str) -> str:
 
 def fetch_xml(url: str) -> str:
     """Fetch XML from *url* using the standard library."""
-    request = Request(url, headers={"User-Agent": "wikipedia-template-filler/0.1.0"})
+    request = Request(url, headers={"User-Agent": "wikipedia-template-filler/0.2.0"})
     try:
         with urlopen(request, timeout=10) as response:
             return response.read().decode("utf-8")

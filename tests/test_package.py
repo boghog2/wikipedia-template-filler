@@ -19,7 +19,7 @@ from wikipedia_template_filler.cli import SMOKE_CASES, main, run_smoke_cases
 
 class PackageTests(unittest.TestCase):
     def test_version_is_available(self):
-        self.assertEqual(wikipedia_template_filler.__version__, "0.1.0")
+        self.assertEqual(wikipedia_template_filler.__version__, "0.2.0")
 
     def test_source_statuses_are_current(self):
         filler = TemplateFiller()

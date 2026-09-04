@@ -12,7 +12,7 @@ class WebAppTests(unittest.TestCase):
     def test_render_page_lists_supported_sources(self):
         page = web.render_page(source_type="hgnc", identifier="HGNC:1582")
         self.assertIn("Wikipedia Template Filler", page)
-        self.assertIn('<div class="version">v0.1.0 <span class="runtime">python</span></div>', page)
+        self.assertIn('<div class="version">v0.2.0 <span class="runtime">python</span></div>', page)
         self.assertIn("Enter an PubMed ID, PubMed Central ID, ISBN, PubChem CID, or HGNC ID", page)
         self.assertIn("PubMed ID -&gt; cite journal", page)
         self.assertIn("PubMed Central ID -&gt; cite journal", page)

@@ -94,7 +94,7 @@ def xrefs_url(cid: str) -> str:
 
 
 def fetch_json(url: str) -> Mapping[str, Any]:
-    request = Request(url, headers={"User-Agent": "wikipedia-template-filler/0.1.0"})
+    request = Request(url, headers={"User-Agent": "wikipedia-template-filler/0.2.0"})
     try:
         with urlopen(request, timeout=10) as response:
             return json.loads(response.read().decode("utf-8"))

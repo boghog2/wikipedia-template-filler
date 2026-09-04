@@ -70,7 +70,7 @@ def hgnc_url(hgnc_id: str) -> str:
 
 def fetch_json(url: str) -> str:
     """Fetch JSON from url using the standard library."""
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "wikipedia-template-filler/0.1.0"})
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": "wikipedia-template-filler/0.2.0"})
     try:
         with urlopen(request, timeout=10) as response:
             return response.read().decode("utf-8")

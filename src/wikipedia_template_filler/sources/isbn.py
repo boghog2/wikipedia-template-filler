@@ -62,7 +62,7 @@ def fetch_openlibrary_book(isbn: str, *, fetcher: JsonFetcher | None = None) -> 
 
 def fetch_json(url: str) -> Mapping[str, Any]:
     """Fetch JSON from *url* using the standard library."""
-    request = Request(url, headers={"User-Agent": "wikipedia-template-filler/0.1.0"})
+    request = Request(url, headers={"User-Agent": "wikipedia-template-filler/0.2.0"})
     try:
         with urlopen(request, timeout=10) as response:
             return json.loads(response.read().decode("utf-8"))
