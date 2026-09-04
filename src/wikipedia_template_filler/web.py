@@ -6,16 +6,19 @@ import argparse
 import html
 import sys
 from collections.abc import Callable
+from dataclasses import dataclass
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlencode, urlparse
+from xml.etree import ElementTree
 
 from . import __version__, fill
 from .api import SUPPORTED_SOURCES, SourceSpec, TemplateFiller, TemplateFillerError
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8780
+XML_ERROR_MESSAGE = "Citation could not be generated, perhaps because the requested reference could not be found."
 
 SOURCE_VALUES = {
     "pubmed_id": "pubmed_id",
@@ -58,6 +61,17 @@ WEB_SOURCE_ORDER = (
     "pubchem_cid",
     "hgnc_id",
 )
+
+
+@dataclass(frozen=True)
+class FillResult:
+    """Result of applying web query parameters to the template filler."""
+
+    source_type: str
+    identifier: str
+    options: dict[str, bool]
+    output: str = ""
+    error: str = ""
 
 
 def supported_sources() -> tuple[SourceSpec, ...]:
@@ -220,15 +234,24 @@ textarea {{
   width: min(65%, 100%);
   margin-top: 8px;
 }}
-.data-sources {{
+.data-sources,
+.xml-output {{
   margin-top: 18px;
   padding-top: 12px;
   border-top: 1px solid #ccc;
+}}
+.data-sources {{
   overflow-x: auto;
 }}
-.data-sources h2 {{
+.data-sources h2,
+.xml-output h2 {{
   margin: 0 0 10px;
   font-size: 18px;
+}}
+.xml-output p {{
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
 }}
 .data-sources table {{
   width: max-content;
@@ -301,6 +324,7 @@ th {{
     </div>
   </form>
   {data_sources_table()}
+  {xml_output_note()}
 </main>
 <script>
 const copyButton = document.querySelector('[data-copy-output]');
@@ -361,6 +385,14 @@ def data_sources_table() -> str:
         {rows}
       </tbody>
     </table>
+  </section>"""
+
+
+def xml_output_note() -> str:
+    """Render legacy XML-output instructions."""
+    return """<section class="xml-output">
+    <h2>XML output</h2>
+    <p>This tool can output XML in case you're interested in developing, for example, an Ajax interface to this page. Just add <code>&amp;format=xml</code> at the end of the URL.</p>
   </section>"""
 
 
@@ -454,17 +486,15 @@ def renderer_options(params: dict[str, list[str]]) -> dict[str, bool]:
     return options
 
 
-def render_fill_page(
+def fill_request(
     params: dict[str, list[str]],
     *,
     fill_func: Callable[..., str] | None = None,
-) -> str:
-    """Render the filled-template page for web and WSGI entry points."""
+) -> FillResult:
+    """Apply query parameters and return a fill result for HTML or XML."""
     source_type = query_value(params, "source_type", "type", default="pmid")
     identifier = query_value(params, "identifier", "id")
     options = renderer_options(params)
-    add_param_space = options["add_param_space"]
-    vertical = options["vertical"]
     output = ""
     error = ""
 
@@ -481,14 +511,74 @@ def render_fill_page(
         except TemplateFillerError as exc:
             error = str(exc)
 
-    return render_page(
+    return FillResult(
         source_type=source_type,
         identifier=identifier,
-        add_param_space=add_param_space,
-        vertical=vertical,
+        options=options,
         output=output,
         error=error,
     )
+
+
+def render_fill_page(
+    params: dict[str, list[str]],
+    *,
+    fill_func: Callable[..., str] | None = None,
+) -> str:
+    """Render the filled-template page for web and WSGI entry points."""
+    result = fill_request(params, fill_func=fill_func)
+    return render_page(
+        source_type=result.source_type,
+        identifier=result.identifier,
+        add_param_space=result.options["add_param_space"],
+        vertical=result.options["vertical"],
+        output=result.output,
+        error=result.error,
+    )
+
+
+def is_xml_request(params: dict[str, list[str]]) -> bool:
+    """Return true when the query asks for legacy XML output."""
+    return query_value(params, "format").lower() == "xml"
+
+
+def render_xml_response(
+    params: dict[str, list[str]],
+    *,
+    fill_func: Callable[..., str] | None = None,
+) -> str:
+    """Render a Perl-compatible XML response for ``format=xml`` requests."""
+    result = fill_request(params, fill_func=fill_func)
+    root = ElementTree.Element("wikitool", {"application": "cite"})
+    query = ElementTree.SubElement(root, "query")
+    identifier = ElementTree.SubElement(query, "id", {"type": result.source_type})
+    identifier.text = result.identifier
+
+    response = ElementTree.SubElement(root, "response", {"status": "ok" if result.output else "error"})
+    if result.output:
+        ElementTree.SubElement(response, "source")
+        content = ElementTree.SubElement(response, "content", {"template": xml_template_name(result.source_type)})
+        content.text = result.output
+        paramlist = ElementTree.SubElement(response, "paramlist")
+        for name, values in params.items():
+            for value in values:
+                param = ElementTree.SubElement(paramlist, "param", {"name": name})
+                param.text = value
+    else:
+        error = ElementTree.SubElement(response, "error")
+        error.text = result.error or XML_ERROR_MESSAGE
+
+    ElementTree.indent(root, space="  ")
+    return "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + ElementTree.tostring(root, encoding="unicode") + "\n"
+
+
+def xml_template_name(source_type: str) -> str:
+    """Return the legacy Template:Name label for a source type."""
+    try:
+        template = TemplateFiller().source_spec(source_type).template
+    except TemplateFillerError:
+        return ""
+    return f"Template:{template[:1].upper()}{template[1:]}"
 
 
 def make_handler() -> type[BaseHTTPRequestHandler]:
@@ -501,7 +591,9 @@ def make_handler() -> type[BaseHTTPRequestHandler]:
             parsed = urlparse(self.path)
             if parsed.path in {"/", "/fill", "/cgi-bin/index.cgi"}:
                 params = parse_qs(parsed.query)
-                if parsed.path == "/" and not params:
+                if is_xml_request(params):
+                    self.respond_xml(render_xml_response(params))
+                elif parsed.path == "/" and not params:
                     self.respond_html(render_page())
                 else:
                     self.handle_fill(params)
@@ -512,9 +604,15 @@ def make_handler() -> type[BaseHTTPRequestHandler]:
             self.respond_html(render_fill_page(params))
 
         def respond_html(self, body: str) -> None:
+            self.respond(body, "text/html; charset=utf-8")
+
+        def respond_xml(self, body: str) -> None:
+            self.respond(body, "application/xml; charset=utf-8")
+
+        def respond(self, body: str, content_type: str) -> None:
             data = body.encode("utf-8")
             self.send_response(HTTPStatus.OK)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)

@@ -33,6 +33,8 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("name=\"add_param_space\"", page)
         self.assertIn("name=\"vertical\"", page)
         self.assertIn("Data sources", page)
+        self.assertIn("XML output", page)
+        self.assertIn("&amp;format=xml", page)
         self.assertIn("{{cite journal}}", page)
         self.assertIn("{{chembox}}", page)
         self.assertIn("href=\"/?type=pubchem_id&amp;id=2244&amp;add_param_space=1&amp;add_iupac_name=1\"", page)
@@ -165,6 +167,27 @@ class WebAppTests(unittest.TestCase):
         body = self.fetch("/cgi-bin/index.cgi?type=pubchem_id&id=2244", fill_result="{{chembox}}")
         self.assertIn("{{chembox}}", body)
 
+    def test_xml_format_returns_legacy_xml_response(self):
+        status, headers, body = self.fetch_response(
+            "/cgi-bin/index.cgi?type=pubmed_id&id=123455&format=xml&add_param_space=1",
+            fill_result="{{cite journal|title=A & B}}",
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(headers["Content-Type"], "application/xml; charset=utf-8")
+        self.assertIn("<?xml version=\"1.0\" encoding=\"utf-8\"?>", body)
+        self.assertIn("<wikitool application=\"cite\">", body)
+        self.assertIn("<id type=\"pubmed_id\">123455</id>", body)
+        self.assertIn("<response status=\"ok\">", body)
+        self.assertIn("<content template=\"Template:Cite journal\">{{cite journal|title=A &amp; B}}</content>", body)
+        self.assertIn("<param name=\"format\">xml</param>", body)
+
+    def test_xml_format_returns_error_response(self):
+        status, headers, body = self.fetch_response("/cgi-bin/index.cgi?type=pubmed_id&format=xml")
+        self.assertEqual(status, 200)
+        self.assertEqual(headers["Content-Type"], "application/xml; charset=utf-8")
+        self.assertIn("<response status=\"error\">", body)
+        self.assertIn("<error>Enter an identifier.</error>", body)
+
 
     def test_pending_legacy_url_renders_clear_error(self):
         body = self.fetch("/?type=url&id=https%3A%2F%2Fexample.org", fill_result=None)
@@ -176,7 +199,7 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("DrugBank/drugbox lookup is currently unsupported", body)
         self.assertIn('<option value="drugbank_id" selected disabled>DrugBank ID -&gt; drugbox (unsupported)</option>', body)
 
-    def fetch(self, path: str, fill_result: str | None = "") -> str:
+    def fetch_response(self, path: str, fill_result: str | None = "") -> tuple[int, dict[str, str], str]:
         server = ThreadingHTTPServer((web.DEFAULT_HOST, 0), web.make_handler())
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
@@ -196,7 +219,11 @@ class WebAppTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join(timeout=5)
-        self.assertEqual(response.status, 200)
+        return response.status, dict(response.getheaders()), body
+
+    def fetch(self, path: str, fill_result: str | None = "") -> str:
+        status, _headers, body = self.fetch_response(path, fill_result=fill_result)
+        self.assertEqual(status, 200)
         return body
 
 

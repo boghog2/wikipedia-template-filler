@@ -44,6 +44,18 @@ class WsgiAppTests(unittest.TestCase):
         self.assertEqual(status, "200 OK")
         self.assertIn("Enter an identifier.", body)
 
+    def test_legacy_cgi_url_renders_xml(self):
+        with mock.patch("wikipedia_template_filler.web.fill", return_value="{{cite journal}}") as fake_fill:
+            status, headers, body = self.call_app(
+                "/cgi-bin/index.cgi",
+                "type=pubmed_id&id=123455&format=xml&add_param_space=1",
+            )
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(headers["Content-Type"], "application/xml; charset=utf-8")
+        self.assertIn("<wikitool application=\"cite\">", body)
+        self.assertIn("<content template=\"Template:Cite journal\">{{cite journal}}</content>", body)
+        fake_fill.assert_called_once()
+
     def test_head_has_headers_without_body(self):
         status, headers, body = self.call_app("/", method="HEAD")
         self.assertEqual(status, "200 OK")

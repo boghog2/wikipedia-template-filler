@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterable
 from http import HTTPStatus
 from urllib.parse import parse_qs
 
-from .web import render_fill_page, render_page
+from .web import is_xml_request, render_fill_page, render_page, render_xml_response
 
 ROUTES = {"/", "/fill", "/cgi-bin/index.cgi"}
 
@@ -29,6 +29,9 @@ def app(environ: dict[str, object], start_response: Callable[..., object]) -> It
         return respond(start_response, HTTPStatus.NOT_FOUND, "Not found", method)
 
     params = parse_qs(query_string)
+    if is_xml_request(params):
+        body = render_xml_response(params)
+        return respond(start_response, HTTPStatus.OK, body, method, content_type="application/xml; charset=utf-8")
     if path == "/" and not params:
         body = render_page()
     else:
@@ -43,10 +46,11 @@ def respond(
     method: str,
     *,
     headers: list[tuple[str, str]] | None = None,
+    content_type: str = "text/html; charset=utf-8",
 ) -> Iterable[bytes]:
     data = body.encode("utf-8")
     response_headers = [
-        ("Content-Type", "text/html; charset=utf-8"),
+        ("Content-Type", content_type),
         ("Content-Length", str(len(data))),
     ]
     if headers:
