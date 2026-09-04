@@ -71,7 +71,7 @@ WEB_OPTIONS = (
     ("full_journal_title", "Use full journal title (cite journal only)"),
     ("link_journal", "Link journal title (cite journal only)"),
     ("add_text_url", "Add URL (cite journal only)"),
-    ("add_accessdate", "Add access date (cite journal URL only)"),
+    ("add_accessdate", "Add access date (cite template URL only)"),
 )
 
 

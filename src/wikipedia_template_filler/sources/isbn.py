@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Callable, Mapping
+from datetime import date
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
@@ -31,7 +32,7 @@ def fill_isbn(identifier: str, *, json_fetcher: JsonFetcher | None = None, **opt
 
     fetcher = json_fetcher or fetch_json
     book = fetch_openlibrary_book(isbn, fetcher=fetcher)
-    fields = book_fields(isbn, book)
+    fields = book_fields(isbn, book, add_accessdate=bool(options.get("add_accessdate", False)))
     return render_template(
         "cite book",
         fields,
@@ -74,11 +75,12 @@ def fetch_json(url: str) -> Mapping[str, Any]:
         raise SourceLookupError("Open Library returned invalid JSON") from exc
 
 
-def book_fields(isbn: str, book: Mapping[str, Any]) -> list[tuple[str, object]]:
+def book_fields(isbn: str, book: Mapping[str, Any], *, add_accessdate: bool = False) -> list[tuple[str, object]]:
     """Return ordered ``{{cite book}}`` fields for an Open Library record."""
     identifiers = book.get("identifiers")
     if not isinstance(identifiers, Mapping):
         identifiers = {}
+    url = book_url(book)
 
     return [
         ("vauthors", vancouver_authors(book.get("authors"))),
@@ -90,8 +92,20 @@ def book_fields(isbn: str, book: Mapping[str, Any]) -> list[tuple[str, object]]:
         ("isbn", isbn),
         ("oclc", first_identifier(identifiers.get("oclc"))),
         ("doi", first_identifier(identifiers.get("doi"))),
-        ("accessdate", ""),
+        ("url", url),
+        ("accessdate", current_accessdate() if add_accessdate and url else ""),
     ]
+
+
+def book_url(book: Mapping[str, Any]) -> str:
+    """Return the Open Library record URL when available."""
+    url = book.get("url")
+    return str(url) if url else ""
+
+
+def current_accessdate() -> str:
+    """Return today's date in the citation access-date style."""
+    return date.today().strftime("%-d %B %Y")
 
 
 def join_names(items: object) -> str:

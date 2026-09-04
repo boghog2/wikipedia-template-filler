@@ -26,6 +26,7 @@ class RendererTests(unittest.TestCase):
             ("isbn", "0721659446"),
             ("oclc", "31378424"),
             ("doi", ""),
+            ("url", ""),
             ("accessdate", ""),
         ]
         self.assertEqual(render_template("cite book", fields, add_param_space=True, include_empty=True), fixture["output"])

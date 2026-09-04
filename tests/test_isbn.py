@@ -1,11 +1,13 @@
 import json
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from wikipedia_template_filler import fill
 from wikipedia_template_filler.sources.isbn import (
     SourceLookupError,
     book_fields,
+    book_url,
     fetch_openlibrary_book,
     fill_isbn,
     first_identifier,
@@ -77,6 +79,27 @@ class IsbnTests(unittest.TestCase):
             }
 
         self.assertEqual(fill_isbn(golden["id"], json_fetcher=fake_fetcher, extended=True, **golden["options"]), golden["output"])
+
+    def test_book_url_returns_open_library_record_url(self):
+        self.assertEqual(book_url({"url": "https://openlibrary.org/books/OL123M/Example"}), "https://openlibrary.org/books/OL123M/Example")
+        self.assertEqual(book_url({}), "")
+
+    def test_fill_isbn_can_add_accessdate_when_url_is_present(self):
+        def fake_fetcher(url: str):
+            self.assertEqual(url, openlibrary_url("0721659446"))
+            return {
+                "ISBN:0721659446": {
+                    "authors": [{"name": "Arthur C. Guyton"}],
+                    "title": "Textbook of medical physiology",
+                    "publish_date": "1996",
+                    "identifiers": {},
+                    "url": "https://openlibrary.org/books/OL7720968M/Textbook_of_medical_physiology",
+                }
+            }
+
+        with mock.patch("wikipedia_template_filler.sources.isbn.current_accessdate", return_value="4 September 2026"):
+            output = fill_isbn("0721659446", json_fetcher=fake_fetcher, add_param_space=True, add_accessdate=True)
+        self.assertIn("| url = https://openlibrary.org/books/OL7720968M/Textbook_of_medical_physiology | accessdate = 4 September 2026", output)
 
     def test_fetch_openlibrary_book_raises_for_missing_record(self):
         with self.assertRaisesRegex(SourceLookupError, "no book matches"):

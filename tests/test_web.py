@@ -44,7 +44,7 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("Use full journal title (cite journal only)", page)
         self.assertIn("Link journal title (cite journal only)", page)
         self.assertIn("Add URL (cite journal only)", page)
-        self.assertIn("Add access date (cite journal URL only)", page)
+        self.assertIn("Add access date (cite template URL only)", page)
         self.assertIn("Data sources", page)
         self.assertIn("Old URL compatibility", page)
         self.assertIn("Old Toolforge and Wikipedia talk-page links", page)
