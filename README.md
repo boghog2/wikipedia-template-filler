@@ -121,6 +121,14 @@ DrugBank/drugbox is explicitly unsupported.
 
 The local web app accepts legacy CGI-style query parameters used by old links, such as `/?type=pubmed_id&id=18535242&add_param_space=1` and `/?type=pubchem_id&id=2244`. The newer `/fill?source_type=pmid&identifier=18535242` form remains supported too.
 
+XML output is available for legacy CGI-style URLs by adding `format=xml` to the query string:
+
+```bash
+curl "http://127.0.0.1:8780/cgi-bin/index.cgi?type=pubmed_id&id=18535242&add_param_space=1&format=xml"
+```
+
+The XML response uses the same compatibility wrapper as the Perl tool: `wikitool`, `query`, `response`, `content`, and `paramlist`.
+
 ## Initial Porting Order
 
 1. Template renderer and golden fixture tests
