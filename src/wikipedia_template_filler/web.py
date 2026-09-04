@@ -62,16 +62,16 @@ WEB_SOURCE_ORDER = (
     "hgnc_id",
 )
 WEB_OPTIONS = (
-    ("vertical", "Fill vertically"),
-    ("extended", "Show extended fields (cite templates only)"),
-    ("add_param_space", "Pad parameter names and values"),
+    ("vertical", "Fill vertically (cite templates only)"),
+    ("extended", "Show extended fields (cite and protein templates only)"),
+    ("add_param_space", "Pad parameter names and values (cite and protein templates only)"),
     ("add_ref_tag", "Add ref tag (cite templates only)"),
-    ("omit_url_if_doi_filled", "Omit URL field if DOI field is populated (cite templates only)"),
-    ("dont_strip_trailing_period", "Don't strip trailing period from article title"),
-    ("full_journal_title", "Use full journal title"),
-    ("link_journal", "Link journal title"),
-    ("add_text_url", "Add URL (if available)"),
-    ("add_accessdate", "Add access date (cite templates only)"),
+    ("omit_url_if_doi_filled", "Omit URL field if DOI field is populated (cite journal only)"),
+    ("dont_strip_trailing_period", "Don't strip trailing period from article title (cite journal only)"),
+    ("full_journal_title", "Use full journal title (cite journal only)"),
+    ("link_journal", "Link journal title (cite journal only)"),
+    ("add_text_url", "Add URL (cite journal only)"),
+    ("add_accessdate", "Add access date (cite journal URL only)"),
 )
 
 
