@@ -1,8 +1,9 @@
 import json
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from wikipedia_template_filler import fill
+from wikipedia_template_filler import fill, web
 from wikipedia_template_filler.sources.pubmed import (
     SourceLookupError,
     article_fields,
@@ -135,6 +136,38 @@ class PubMedTests(unittest.TestCase):
             return pubmed_xml()
 
         self.assertEqual(fill_pubmed(golden["id"], xml_fetcher=fake_fetcher, **golden["options"]), golden["output"])
+
+    def test_web_xml_response_matches_pubmed_golden_fixture(self):
+        golden = load_fixture(GOLDEN_DIR, "pubmed_18535242.json")
+
+        def fixture_fill(source_type: str, identifier: str, **options: object) -> str:
+            self.assertEqual(source_type, "pubmed_id")
+            self.assertEqual(identifier, golden["id"])
+            return fill_pubmed(identifier, xml_fetcher=lambda url: pubmed_xml(), **options)
+
+        xml = web.render_xml_response(
+            {
+                "type": ["pubmed_id"],
+                "id": [golden["id"]],
+                "format": ["xml"],
+                "add_param_space": ["1"],
+            },
+            fill_func=fixture_fill,
+        )
+
+        root = ET.fromstring(xml)
+        self.assertEqual(root.attrib, {"application": "cite"})
+        self.assertEqual(root.findtext("query/id"), golden["id"])
+        response = root.find("response")
+        self.assertIsNotNone(response)
+        self.assertEqual(response.attrib, {"status": "ok"})
+        content = response.find("content")
+        self.assertIsNotNone(content)
+        self.assertEqual(content.attrib, {"template": "Template:Cite journal"})
+        self.assertEqual(content.text, golden["output"])
+        params = {param.attrib["name"]: param.text for param in response.findall("paramlist/param")}
+        self.assertEqual(params["format"], "xml")
+        self.assertEqual(params["id"], golden["id"])
 
     def test_fill_pubmed_can_use_full_journal_title(self):
         output = fill_pubmed(
