@@ -63,7 +63,7 @@ WEB_SOURCE_ORDER = (
 )
 WEB_OPTIONS = (
     ("vertical", "Fill vertically"),
-    ("extended", "Show extended fields (for cite templates only)"),
+    ("extended", "Show extended fields (cite templates only)"),
     ("add_param_space", "Pad parameter names and values"),
     ("add_ref_tag", "Add ref tag (cite templates only)"),
     ("omit_url_if_doi_filled", "Omit URL field if DOI field is populated (cite templates only)"),

@@ -37,7 +37,7 @@ class WebAppTests(unittest.TestCase):
         self.assertIn(".options {", page)
         self.assertIn("display: grid;", page)
         self.assertIn("gap: 6px;", page)
-        self.assertIn("Show extended fields (for cite templates only)", page)
+        self.assertIn("Show extended fields (cite templates only)", page)
         self.assertIn("Add ref tag (cite templates only)", page)
         self.assertIn("Omit URL field if DOI field is populated (cite templates only)", page)
         self.assertIn("Don&#x27;t strip trailing period from article title", page)
