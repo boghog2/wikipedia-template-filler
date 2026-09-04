@@ -169,6 +169,43 @@ class PubMedTests(unittest.TestCase):
         self.assertEqual(params["format"], "xml")
         self.assertEqual(params["id"], golden["id"])
 
+    def test_fill_pubmed_can_preserve_trailing_title_period(self):
+        output = fill_pubmed(
+            "18535242",
+            xml_fetcher=lambda url: pubmed_xml(),
+            add_param_space=True,
+            dont_strip_trailing_period=True,
+        )
+        self.assertIn("microscopy. | journal", output)
+
+    def test_fill_pubmed_can_link_journal_title(self):
+        output = fill_pubmed(
+            "18535242",
+            xml_fetcher=lambda url: pubmed_xml(),
+            add_param_space=True,
+            link_journal=True,
+        )
+        self.assertIn("| journal = [[Science]] |", output)
+
+    def test_fill_pubmed_can_add_url_and_omit_it_when_doi_exists(self):
+        output = fill_pubmed(
+            "18535242",
+            xml_fetcher=lambda url: pubmed_xml(),
+            add_param_space=True,
+            add_text_url=True,
+        )
+        self.assertIn("| url = https://pubmed.ncbi.nlm.nih.gov/18535242/", output)
+
+        omitted = fill_pubmed(
+            "18535242",
+            xml_fetcher=lambda url: pubmed_xml(),
+            add_param_space=True,
+            add_text_url=True,
+            omit_url_if_doi_filled=True,
+        )
+        self.assertIn("| url = }}", omitted)
+        self.assertNotIn("pubmed.ncbi.nlm.nih.gov", omitted)
+
     def test_fill_pubmed_can_use_full_journal_title(self):
         output = fill_pubmed(
             "18535242",

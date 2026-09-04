@@ -61,6 +61,19 @@ WEB_SOURCE_ORDER = (
     "pubchem_cid",
     "hgnc_id",
 )
+WEB_OPTIONS = (
+    ("vertical", "Fill vertically"),
+    ("extended", "Show extended fields"),
+    ("add_param_space", "Pad parameter names and values"),
+    ("add_ref_tag", "Add ref tag"),
+    ("dont_use_etal", "Don't use et al. for author list"),
+    ("omit_url_if_doi_filled", "Omit URL field if DOI field is populated (journals only)"),
+    ("dont_strip_trailing_period", "Don't strip trailing period from article title"),
+    ("full_journal_title", "Use full journal title"),
+    ("link_journal", "Link journal title"),
+    ("add_text_url", "Add URL (if available)"),
+    ("add_accessdate", "Add access date (if relevant)"),
+)
 
 
 @dataclass(frozen=True)
@@ -93,8 +106,14 @@ def render_page(
     vertical: bool = False,
     output: str = "",
     error: str = "",
+    option_values: dict[str, bool] | None = None,
 ) -> str:
     """Render the single-page web interface."""
+    option_state = web_option_state(
+        add_param_space=add_param_space,
+        vertical=vertical,
+        option_values=option_values,
+    )
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -189,9 +208,8 @@ button:hover {{ background: var(--accent-strong); }}
 }}
 .options {{
   grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  display: grid;
+  gap: 6px;
   color: var(--muted);
 }}
 .options label {{
@@ -322,8 +340,7 @@ th {{
     </label>
     <button class="submit-button" type="submit">Submit</button>
     <div class="options">
-      <label><input type="checkbox" name="add_param_space" value="1" {checked(add_param_space)}> Parameter spacing</label>
-      <label><input type="checkbox" name="vertical" value="1" {checked(vertical)}> Vertical output</label>
+      {option_controls(option_state)}
     </div>
   </form>
   {data_sources_table()}
@@ -435,6 +452,31 @@ def example_href(spec: SourceSpec) -> str:
     return f"/?{urlencode(query)}"
 
 
+def web_option_state(
+    *,
+    add_param_space: bool,
+    vertical: bool,
+    option_values: dict[str, bool] | None = None,
+) -> dict[str, bool]:
+    """Return checkbox state for the legacy web options."""
+    state = {name: False for name, _label in WEB_OPTIONS}
+    state["add_param_space"] = add_param_space
+    state["vertical"] = vertical
+    if option_values:
+        state.update({name: bool(value) for name, value in option_values.items() if name in state})
+    return state
+
+
+def option_controls(option_state: dict[str, bool]) -> str:
+    """Render legacy option checkboxes in Perl web-interface order."""
+    rows = []
+    for name, label in WEB_OPTIONS:
+        rows.append(
+            f"<label><input type=\"checkbox\" name=\"{html.escape(name)}\" value=\"1\" {checked(option_state.get(name, False))}> {html.escape(label)}</label>"
+        )
+    return "\n      ".join(rows)
+
+
 def checked(value: bool) -> str:
     """Return a checked attribute when value is truthy."""
     return "checked" if value else ""
@@ -520,6 +562,8 @@ def fill_request(
                 identifier,
                 **options,
             )
+            if options["add_ref_tag"]:
+                output = f"<ref>{output}</ref>"
         except TemplateFillerError as exc:
             error = str(exc)
 
@@ -546,6 +590,7 @@ def render_fill_page(
         vertical=result.options["vertical"],
         output=result.output,
         error=result.error,
+        option_values=result.options,
     )
 
 

@@ -63,7 +63,11 @@ def fill_pubmed(identifier: str, *, xml_fetcher: XmlFetcher | None = None, **opt
         raise SourceLookupError("no PubMed ID given")
 
     xml = (xml_fetcher or fetch_xml)(pubmed_url(pmid))
-    article = parse_pubmed_article(xml, expected_pmid=pmid)
+    article = parse_pubmed_article(
+        xml,
+        expected_pmid=pmid,
+        strip_title_period=not bool(options.get("dont_strip_trailing_period", False)),
+    )
     return render_article(article, **options)
 
 
@@ -75,7 +79,11 @@ def fill_pmc(identifier: str, *, xml_fetcher: XmlFetcher | None = None, **option
 
     fetcher = xml_fetcher or fetch_xml
     linked_pmid = parse_linked_pmid(fetcher(pmc_to_pubmed_url(pmcid)), expected_pmcid=pmcid)
-    article = parse_pubmed_article(fetcher(pubmed_url(linked_pmid)), expected_pmid=linked_pmid)
+    article = parse_pubmed_article(
+        fetcher(pubmed_url(linked_pmid)),
+        expected_pmid=linked_pmid,
+        strip_title_period=not bool(options.get("dont_strip_trailing_period", False)),
+    )
     if article.pmc and article.pmc != pmcid:
         raise SourceLookupError(f"no article matches the given PubMed Central ID ({pmcid})")
     return render_article(article, **options)
@@ -85,7 +93,13 @@ def render_article(article: PubMedArticle, **options: object) -> str:
     """Render normalized article data as a ``{{cite journal}}`` template."""
     return render_template(
         "cite journal",
-        article_fields(article, full_journal_title=bool(options.get("full_journal_title", False))),
+        article_fields(
+            article,
+            full_journal_title=bool(options.get("full_journal_title", False)),
+            link_journal=bool(options.get("link_journal", False)),
+            add_text_url=bool(options.get("add_text_url", False)),
+            omit_url_if_doi_filled=bool(options.get("omit_url_if_doi_filled", False)),
+        ),
         add_param_space=bool(options.get("add_param_space", False)),
         vertical=bool(options.get("vertical", False)),
     )
@@ -142,7 +156,7 @@ def parse_linked_pmid(xml: str, *, expected_pmcid: str | None = None) -> str:
     raise SourceLookupError("no PubMed article is linked to the given PubMed Central ID")
 
 
-def parse_pubmed_article(xml: str, *, expected_pmid: str | None = None) -> PubMedArticle:
+def parse_pubmed_article(xml: str, *, expected_pmid: str | None = None, strip_title_period: bool = True) -> PubMedArticle:
     """Parse one PubMed efetch XML response into normalized article data."""
     try:
         root = ET.fromstring(xml)
@@ -164,7 +178,7 @@ def parse_pubmed_article(xml: str, *, expected_pmid: str | None = None) -> PubMe
 
     return PubMedArticle(
         vauthors=vancouver_authors(article.find("AuthorList") if article is not None else None),
-        title=strip_trailing_period(text(article.find("ArticleTitle") if article is not None else None)),
+        title=article_title(text(article.find("ArticleTitle") if article is not None else None), strip_period=strip_title_period),
         journal=text(journal.find("ISOAbbreviation") if journal is not None else None),
         journal_title=text(journal.find("Title") if journal is not None else None),
         volume=text(journal.find("JournalIssue/Volume") if journal is not None else None),
@@ -177,9 +191,21 @@ def parse_pubmed_article(xml: str, *, expected_pmid: str | None = None) -> PubMe
     )
 
 
-def article_fields(article: PubMedArticle, *, full_journal_title: bool = False) -> list[tuple[str, str]]:
+def article_fields(
+    article: PubMedArticle,
+    *,
+    full_journal_title: bool = False,
+    link_journal: bool = False,
+    add_text_url: bool = False,
+    omit_url_if_doi_filled: bool = False,
+) -> list[tuple[str, str]]:
     """Return ordered ``{{cite journal}}`` fields for a PubMed article."""
     journal = article.journal_title if full_journal_title and article.journal_title else article.journal
+    if link_journal and journal:
+        journal = f"[[{journal}]]"
+    url = f"https://pubmed.ncbi.nlm.nih.gov/{article.pmid}/" if add_text_url and article.pmid else article.url
+    if omit_url_if_doi_filled and article.doi:
+        url = ""
     return [
         ("vauthors", article.vauthors),
         ("title", article.title),
@@ -191,7 +217,7 @@ def article_fields(article: PubMedArticle, *, full_journal_title: bool = False) 
         ("pmid", article.pmid),
         ("pmc", article.pmc),
         ("doi", article.doi),
-        ("url", article.url),
+        ("url", url),
     ]
 
 
@@ -200,6 +226,11 @@ def text(node: ET.Element | None) -> str:
     if node is None:
         return ""
     return unescape("".join(node.itertext()).strip())
+
+
+def article_title(value: str, *, strip_period: bool = True) -> str:
+    """Return the article title, optionally preserving a final period."""
+    return strip_trailing_period(value) if strip_period else value
 
 
 def strip_trailing_period(value: str) -> str:

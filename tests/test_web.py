@@ -31,7 +31,21 @@ class WebAppTests(unittest.TestCase):
         self.assertIn(".submit-button {", page)
         self.assertIn("padding: 0 8px;", page)
         self.assertIn("name=\"add_param_space\"", page)
+        self.assertIn("Pad parameter names and values", page)
         self.assertIn("name=\"vertical\"", page)
+        self.assertIn("Fill vertically", page)
+        self.assertIn(".options {", page)
+        self.assertIn("display: grid;", page)
+        self.assertIn("gap: 6px;", page)
+        self.assertIn("Show extended fields", page)
+        self.assertIn("Add ref tag", page)
+        self.assertIn("Don&#x27;t use et al. for author list", page)
+        self.assertIn("Omit URL field if DOI field is populated (journals only)", page)
+        self.assertIn("Don&#x27;t strip trailing period from article title", page)
+        self.assertIn("Use full journal title", page)
+        self.assertIn("Link journal title", page)
+        self.assertIn("Add URL (if available)", page)
+        self.assertIn("Add access date (if relevant)", page)
         self.assertIn("Data sources", page)
         self.assertIn("Old URL compatibility", page)
         self.assertIn("Old Toolforge and Wikipedia talk-page links", page)
@@ -72,6 +86,14 @@ class WebAppTests(unittest.TestCase):
         positions = [page.index(label) for label in expected]
         self.assertEqual(positions, sorted(positions))
 
+
+    def test_render_page_orders_options_like_perl_form(self):
+        page = web.render_page(option_values={"add_ref_tag": True, "link_journal": True})
+        expected = [label.replace("\x27", "&#x27;") for _name, label in web.WEB_OPTIONS]
+        positions = [page.index(label) for label in expected]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn('name="add_ref_tag" value="1" checked', page)
+        self.assertIn('name="link_journal" value="1" checked', page)
 
     def test_render_page_escapes_output_and_errors(self):
         page = web.render_page(output="{{cite journal|title=<bad>}}", error="x < y")
@@ -152,6 +174,13 @@ class WebAppTests(unittest.TestCase):
         )
         self.assertIn("{{cite journal}}", body)
         self.assertIn('value="18535242"', body)
+
+    def test_fill_route_adds_ref_tag_when_requested(self):
+        body = self.fetch(
+            "/fill?source_type=pmid&identifier=18535242&add_ref_tag=1",
+            fill_result="{{cite journal}}",
+        )
+        self.assertIn("&lt;ref&gt;{{cite journal}}&lt;/ref&gt;", body)
 
     def test_fill_route_renders_missing_identifier_error(self):
         body = self.fetch("/fill?source_type=pmid")
