@@ -1,5 +1,6 @@
 import json
 import unittest
+from unittest import mock
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -213,7 +214,28 @@ class PubMedTests(unittest.TestCase):
             add_param_space=True,
             extended=True,
         )
-        self.assertIn("| url = }}", extended)
+        self.assertIn("| url = | accessdate = }}", extended)
+
+    def test_fill_pubmed_can_add_accessdate_when_url_is_present(self):
+        with mock.patch("wikipedia_template_filler.sources.pubmed.current_accessdate", return_value="4 September 2026"):
+            output = fill_pubmed(
+                "18535242",
+                xml_fetcher=lambda url: pubmed_xml(),
+                add_param_space=True,
+                add_text_url=True,
+                add_accessdate=True,
+            )
+            self.assertIn("| url = https://pubmed.ncbi.nlm.nih.gov/18535242/ | accessdate = 4 September 2026", output)
+
+            omitted = fill_pubmed(
+                "18535242",
+                xml_fetcher=lambda url: pubmed_xml(),
+                add_param_space=True,
+                add_text_url=True,
+                add_accessdate=True,
+                omit_url_if_doi_filled=True,
+            )
+            self.assertNotIn("| accessdate =", omitted)
 
     def test_fill_pubmed_can_use_full_journal_title(self):
         output = fill_pubmed(

@@ -63,15 +63,15 @@ WEB_SOURCE_ORDER = (
 )
 WEB_OPTIONS = (
     ("vertical", "Fill vertically"),
-    ("extended", "Show extended fields"),
+    ("extended", "Show extended fields (for cite templates only)"),
     ("add_param_space", "Pad parameter names and values"),
     ("add_ref_tag", "Add ref tag"),
-    ("omit_url_if_doi_filled", "Omit URL field if DOI field is populated (journals only)"),
+    ("omit_url_if_doi_filled", "Omit URL field if DOI field is populated (cite templates only)"),
     ("dont_strip_trailing_period", "Don't strip trailing period from article title"),
     ("full_journal_title", "Use full journal title"),
     ("link_journal", "Link journal title"),
     ("add_text_url", "Add URL (if available)"),
-    ("add_accessdate", "Add access date (if relevant)"),
+    ("add_accessdate", "Add access date (cite templates only)"),
 )
 
 

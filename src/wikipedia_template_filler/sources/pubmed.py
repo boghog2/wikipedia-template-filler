@@ -6,6 +6,7 @@ import re
 import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date
 from html import unescape
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -99,6 +100,7 @@ def render_article(article: PubMedArticle, **options: object) -> str:
             link_journal=bool(options.get("link_journal", False)),
             add_text_url=bool(options.get("add_text_url", False)),
             omit_url_if_doi_filled=bool(options.get("omit_url_if_doi_filled", False)),
+            add_accessdate=bool(options.get("add_accessdate", False)),
         ),
         add_param_space=bool(options.get("add_param_space", False)),
         vertical=bool(options.get("vertical", False)),
@@ -199,6 +201,7 @@ def article_fields(
     link_journal: bool = False,
     add_text_url: bool = False,
     omit_url_if_doi_filled: bool = False,
+    add_accessdate: bool = False,
 ) -> list[tuple[str, str]]:
     """Return ordered ``{{cite journal}}`` fields for a PubMed article."""
     journal = article.journal_title if full_journal_title and article.journal_title else article.journal
@@ -207,6 +210,7 @@ def article_fields(
     url = f"https://pubmed.ncbi.nlm.nih.gov/{article.pmid}/" if add_text_url and article.pmid else article.url
     if omit_url_if_doi_filled and article.doi:
         url = ""
+    accessdate = current_accessdate() if add_accessdate and url else ""
     return [
         ("vauthors", article.vauthors),
         ("title", article.title),
@@ -219,7 +223,13 @@ def article_fields(
         ("pmc", article.pmc),
         ("doi", article.doi),
         ("url", url),
+        ("accessdate", accessdate),
     ]
+
+
+def current_accessdate() -> str:
+    """Return today's date in the citation access-date style."""
+    return date.today().strftime("%-d %B %Y")
 
 
 def text(node: ET.Element | None) -> str:
