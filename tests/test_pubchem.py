@@ -118,35 +118,57 @@ class PubChemTests(unittest.TestCase):
         self.assertEqual(fields["IUPAC_name"], "<nowiki>2-acetyloxybenzoic acid</nowiki>")
         self.assertEqual(fields["chemical_formula"], "C9H8O4")
 
-    def test_fill_pubchem_renders_vertical_infobox_drug(self):
-        output = fill_pubchem("CID:2244", json_fetcher=fake_fetcher, add_param_space=True)
+    def test_fill_pubchem_renders_compact_infobox_drug_by_default(self):
+        output = fill_pubchem("CID:2244", json_fetcher=fake_fetcher)
         self.assertTrue(output.startswith("{{Infobox drug\n"))
         self.assertIn("<!-- Clinical data -->", output)
         self.assertIn("<!-- Legal status -->", output)
         self.assertIn("<!-- Pharmacokinetic data -->", output)
         self.assertIn("<!-- Identifiers -->", output)
         self.assertIn("<!-- Chemical and physical data -->", output)
+        self.assertIn("|drug_name=Aspirin", output)
+        self.assertIn("|PubChem=2244", output)
+        self.assertIn("|ChEBI=15365", output)
+        self.assertIn("| C=9 | H=8 | O=4", output)
+        self.assertNotIn("|Ag=", output)
+        self.assertNotIn("|charge=", output)
+        self.assertIn("|StdInChIKey=BSYNRYMUTXBXSQ-UHFFFAOYSA-N", output)
+
+    def test_fill_pubchem_extended_and_spacing_options_affect_infobox_drug(self):
+        output = fill_pubchem("CID:2244", json_fetcher=fake_fetcher, add_param_space=True, extended=True)
         self.assertIn("| drug_name               = Aspirin", output)
+        self.assertIn("| INN                     = ", output)
         self.assertIn("| PubChem                 = 2244", output)
-        self.assertIn("| ChEBI                   = 15365", output)
         self.assertIn("| C = 9 | H = 8 | O = 4", output)
-        self.assertNotIn("| Ag =", output)
-        self.assertNotIn("| charge =", output)
         self.assertIn("| StdInChIKey             = BSYNRYMUTXBXSQ-UHFFFAOYSA-N", output)
 
-    def test_fill_pubchem_chembox_renders_legacy_chembox(self):
+    def test_fill_pubchem_chembox_suppresses_empty_fields_by_default(self):
         output = fill_pubchem_chembox("CID:2244", json_fetcher=fake_fetcher)
         self.assertTrue(output.startswith("{{chembox\n"))
-        self.assertIn("| IUPACName=2-acetyloxybenzoic acid", output)
-        self.assertIn("| Section1={{Chembox Identifiers", output)
+        self.assertIn("|IUPACName=2-acetyloxybenzoic acid", output)
+        self.assertIn("|Section1={{Chembox Identifiers", output)
         self.assertIn("|  CASNo=50-78-2", output)
         self.assertIn("|  PubChem=2244", output)
         self.assertIn("|  SMILES=CC(=O)OC1=CC=CC=C1C(=O)O", output)
         self.assertIn("|  InChIKey=BSYNRYMUTXBXSQ-UHFFFAOYSA-N", output)
-        self.assertIn("| Section2={{Chembox Properties", output)
+        self.assertIn("|Section2={{Chembox Properties", output)
         self.assertIn("|  Formula=C<sub>9</sub>H<sub>8</sub>O<sub>4</sub>", output)
         self.assertIn("|  MolarMass=180.16", output)
-        self.assertIn("| Section3={{Chembox Hazards", output)
+        self.assertNotIn("ImageFile", output)
+        self.assertNotIn("Appearance", output)
+        self.assertNotIn("Section3", output)
+
+    def test_fill_pubchem_chembox_extended_and_spacing_options_affect_output(self):
+        output = fill_pubchem_chembox("CID:2244", json_fetcher=fake_fetcher, add_param_space=True, extended=True)
+        self.assertIn("| ImageFile = ", output)
+        self.assertIn("| IUPACName = 2-acetyloxybenzoic acid", output)
+        self.assertIn("| Section1 = {{Chembox Identifiers", output)
+        self.assertIn("|  CASNo = 50-78-2", output)
+        self.assertIn("|  PubChem = 2244", output)
+        self.assertIn("| Section2 = {{Chembox Properties", output)
+        self.assertIn("|  Appearance = ", output)
+        self.assertIn("| Section3 = {{Chembox Hazards", output)
+        self.assertIn("|  MainHazards = ", output)
 
     def test_html_formula_adds_subscripts(self):
         self.assertEqual(html_formula("C9H8O4"), "C<sub>9</sub>H<sub>8</sub>O<sub>4</sub>")

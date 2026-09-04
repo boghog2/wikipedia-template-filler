@@ -57,13 +57,22 @@ class PubChemCompound:
 def fill_pubchem(identifier: str, *, json_fetcher: JsonFetcher | None = None, **options: object) -> str:
     """Return an Infobox drug template for a PubChem CID."""
     compound = lookup_pubchem_compound(identifier, json_fetcher=json_fetcher)
-    return render_drug_template(compound)
+    return render_drug_template(
+        compound,
+        add_param_space=bool(options.get("add_param_space", False)),
+        include_empty=bool(options.get("extended", False)),
+    )
 
 
 def fill_pubchem_chembox(identifier: str, *, json_fetcher: JsonFetcher | None = None, **options: object) -> str:
     """Return a Chembox template for a PubChem CID."""
     compound = lookup_pubchem_compound(identifier, json_fetcher=json_fetcher)
-    return render_chembox_template(compound, add_iupac_name=bool(options.get("add_iupac_name", True)))
+    return render_chembox_template(
+        compound,
+        add_iupac_name=bool(options.get("add_iupac_name", True)),
+        add_param_space=bool(options.get("add_param_space", False)),
+        include_empty=bool(options.get("extended", False)),
+    )
 
 
 def lookup_pubchem_compound(identifier: str, *, json_fetcher: JsonFetcher | None = None) -> PubChemCompound:
@@ -293,41 +302,95 @@ FIELD_DEFAULTS = {
 }
 
 
-def render_chembox_template(compound: PubChemCompound, *, add_iupac_name: bool = True) -> str:
+def render_chembox_template(
+    compound: PubChemCompound,
+    *,
+    add_iupac_name: bool = True,
+    add_param_space: bool = False,
+    include_empty: bool = False,
+) -> str:
     """Render the legacy PubChem CID Chembox template."""
     iupac_name = compound.iupac_name if add_iupac_name else ""
     formula_html = html_formula(compound.molecular_formula)
-    return "\n".join(
-        (
-            "{{chembox",
-            "| ImageFile=",
-            "| ImageSize=",
-            f"| IUPACName={iupac_name}",
-            "| OtherNames=",
-            "| Section1={{Chembox Identifiers",
-            f"|  CASNo={compound.cas}",
-            f"|  PubChem={compound.cid}",
-            f"|  SMILES={compound.smiles}",
-            f"|  InChI={compound.inchi}",
-            f"|  InChIKey={compound.inchikey}",
-            "  }}",
-            "| Section2={{Chembox Properties",
-            f"|  Formula={formula_html}",
-            f"|  MolarMass={compound.molecular_weight}",
-            "|  Appearance=",
-            "|  Density=",
-            "|  MeltingPt=",
-            "|  BoilingPt=",
-            "|  Solubility=",
-            "  }}",
-            "| Section3={{Chembox Hazards",
-            "|  MainHazards=",
-            "|  FlashPt=",
-            "|  Autoignition=",
-            "  }}",
-            "}}",
-        )
+    sections = [
+        ChemboxSection(
+            "Section1",
+            "Chembox Identifiers",
+            (
+                ("CASNo", compound.cas),
+                ("PubChem", compound.cid),
+                ("SMILES", compound.smiles),
+                ("InChI", compound.inchi),
+                ("InChIKey", compound.inchikey),
+            ),
+        ),
+        ChemboxSection(
+            "Section2",
+            "Chembox Properties",
+            (
+                ("Formula", formula_html),
+                ("MolarMass", compound.molecular_weight),
+                ("Appearance", ""),
+                ("Density", ""),
+                ("MeltingPt", ""),
+                ("BoilingPt", ""),
+                ("Solubility", ""),
+            ),
+        ),
+        ChemboxSection(
+            "Section3",
+            "Chembox Hazards",
+            (
+                ("MainHazards", ""),
+                ("FlashPt", ""),
+                ("Autoignition", ""),
+            ),
+        ),
+    ]
+    lines = ["{{chembox"]
+    lines.extend(
+        chembox_parameter(name, value, add_param_space=add_param_space)
+        for name, value in (("ImageFile", ""), ("ImageSize", ""), ("IUPACName", iupac_name), ("OtherNames", ""))
+        if include_empty or value
     )
+    for section in sections:
+        rendered_section = chembox_section(section, add_param_space=add_param_space, include_empty=include_empty)
+        if rendered_section:
+            lines.extend(rendered_section)
+    lines.append("}}")
+    return "\n".join(lines)
+
+
+@dataclass(frozen=True)
+class ChemboxSection:
+    """One nested Chembox section."""
+
+    name: str
+    template_name: str
+    fields: tuple[tuple[str, str], ...]
+
+
+def chembox_section(section: ChemboxSection, *, add_param_space: bool, include_empty: bool) -> list[str]:
+    """Render a nested Chembox section, suppressing empty fields when compact."""
+    rendered_fields = [
+        chembox_parameter(name, value, add_param_space=add_param_space, indent="  ")
+        for name, value in section.fields
+        if include_empty or value
+    ]
+    if not rendered_fields:
+        return []
+    return [
+        chembox_parameter(section.name, "{{" + section.template_name, add_param_space=add_param_space),
+        *rendered_fields,
+        "  }}",
+    ]
+
+
+def chembox_parameter(name: str, value: str, *, add_param_space: bool, indent: str = "") -> str:
+    """Render one Chembox parameter."""
+    separator = " = " if add_param_space else "="
+    prefix = "| " if add_param_space and not indent else f"|{indent}"
+    return f"{prefix}{name}{separator}{value}"
 
 
 def html_formula(formula: str) -> str:
@@ -335,7 +398,12 @@ def html_formula(formula: str) -> str:
     return re.sub(r"(\d+)", r"<sub>\1</sub>", formula)
 
 
-def render_drug_template(compound: PubChemCompound) -> str:
+def render_drug_template(
+    compound: PubChemCompound,
+    *,
+    add_param_space: bool = False,
+    include_empty: bool = False,
+) -> str:
     """Render the full single-drug Infobox drug template with section comments."""
     values = drug_template_values(compound)
     lines = ["{{Infobox drug"]
@@ -344,14 +412,22 @@ def render_drug_template(compound: PubChemCompound) -> str:
             lines.append(item)
             continue
         if item == "__ELEMENTS__":
-            element_line = element_parameter_line(values)
+            element_line = element_parameter_line(values, add_param_space=add_param_space)
             if element_line:
                 lines.append(element_line)
             continue
         value = values.get(item, FIELD_DEFAULTS.get(item, ""))
-        lines.append(f"| {item:<24}= {value}")
+        if include_empty or value:
+            lines.append(drug_parameter(item, value, add_param_space=add_param_space))
     lines.append("}}")
     return "\n".join(lines)
+
+
+def drug_parameter(name: str, value: str, *, add_param_space: bool) -> str:
+    """Render one Infobox drug parameter."""
+    if add_param_space:
+        return f"| {name:<24}= {value}"
+    return f"|{name}={value}"
 
 
 def drug_template_values(compound: PubChemCompound) -> dict[str, str]:
@@ -390,6 +466,7 @@ def formula_elements(formula: str) -> dict[str, int]:
     return counts
 
 
-def element_parameter_line(values: Mapping[str, str]) -> str:
+def element_parameter_line(values: Mapping[str, str], *, add_param_space: bool) -> str:
     """Return one compact element-parameter line, omitting absent elements."""
-    return " ".join(f"| {element} = {value}" for element in ELEMENT_FIELDS if (value := values.get(element, "")))
+    separator = " = " if add_param_space else "="
+    return " ".join(f"| {element}{separator}{value}" for element in ELEMENT_FIELDS if (value := values.get(element, "")))
