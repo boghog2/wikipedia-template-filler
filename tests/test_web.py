@@ -38,7 +38,7 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("display: grid;", page)
         self.assertIn("gap: 6px;", page)
         self.assertIn("Show extended fields (for cite templates only)", page)
-        self.assertIn("Add ref tag", page)
+        self.assertIn("Add ref tag (cite templates only)", page)
         self.assertIn("Omit URL field if DOI field is populated (cite templates only)", page)
         self.assertIn("Don&#x27;t strip trailing period from article title", page)
         self.assertIn("Use full journal title", page)
@@ -180,6 +180,14 @@ class WebAppTests(unittest.TestCase):
             fill_result="{{cite journal}}",
         )
         self.assertIn("&lt;ref&gt;{{cite journal}}&lt;/ref&gt;", body)
+
+    def test_fill_route_does_not_add_ref_tag_to_infoboxes(self):
+        body = self.fetch(
+            "/fill?source_type=hgnc_id&identifier=12403&add_ref_tag=1",
+            fill_result="{{infobox protein}}",
+        )
+        self.assertIn("{{infobox protein}}", body)
+        self.assertNotIn("&lt;ref&gt;{{infobox protein}}&lt;/ref&gt;", body)
 
     def test_fill_route_renders_missing_identifier_error(self):
         body = self.fetch("/fill?source_type=pmid")

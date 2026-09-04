@@ -65,7 +65,7 @@ WEB_OPTIONS = (
     ("vertical", "Fill vertically"),
     ("extended", "Show extended fields (for cite templates only)"),
     ("add_param_space", "Pad parameter names and values"),
-    ("add_ref_tag", "Add ref tag"),
+    ("add_ref_tag", "Add ref tag (cite templates only)"),
     ("omit_url_if_doi_filled", "Omit URL field if DOI field is populated (cite templates only)"),
     ("dont_strip_trailing_period", "Don't strip trailing period from article title"),
     ("full_journal_title", "Use full journal title"),
@@ -539,6 +539,11 @@ def renderer_options(params: dict[str, list[str]]) -> dict[str, bool]:
     return options
 
 
+def should_add_ref_tag(output: str, requested: bool) -> bool:
+    """Return true when a generated cite template should be wrapped in ref tags."""
+    return requested and output.lstrip().lower().startswith("{{cite ")
+
+
 def fill_request(
     params: dict[str, list[str]],
     *,
@@ -561,7 +566,7 @@ def fill_request(
                 identifier,
                 **options,
             )
-            if options["add_ref_tag"]:
+            if should_add_ref_tag(output, options["add_ref_tag"]):
                 output = f"<ref>{output}</ref>"
         except TemplateFillerError as exc:
             error = str(exc)
