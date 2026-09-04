@@ -130,6 +130,11 @@ DrugBank/drugbox is explicitly unsupported.
 
 The local web app accepts legacy CGI-style query parameters used by old links, such as `/?type=pubmed_id&id=18535242&add_param_space=1` and `/?type=pubchem_id&id=2244`. The newer `/fill?source_type=pmid&identifier=18535242` form remains supported too.
 
+For compatibility, a few legacy URL parameters are accepted but intentionally ignored:
+
+- `ddb`: kept because old Toolforge URLs commonly include it, but source routing now uses `type`.
+- `dont_use_etal`: kept so old links do not fail; current output uses `vauthors`, so the old author-list toggle is no longer relevant.
+
 XML output is available for legacy CGI-style URLs by adding `format=xml` to the query string:
 
 ```bash
