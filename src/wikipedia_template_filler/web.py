@@ -235,6 +235,7 @@ textarea {{
   margin-top: 8px;
 }}
 .data-sources,
+.compat-note,
 .xml-output {{
   margin-top: 18px;
   padding-top: 12px;
@@ -244,10 +245,12 @@ textarea {{
   overflow-x: auto;
 }}
 .data-sources h2,
+.compat-note h2,
 .xml-output h2 {{
   margin: 0 0 10px;
   font-size: 18px;
 }}
+.compat-note p,
 .xml-output p {{
   margin: 0;
   color: var(--muted);
@@ -324,6 +327,7 @@ th {{
     </div>
   </form>
   {data_sources_table()}
+  {old_url_compatibility_note()}
   {xml_output_note()}
 </main>
 <script>
@@ -385,6 +389,14 @@ def data_sources_table() -> str:
         {rows}
       </tbody>
     </table>
+  </section>"""
+
+
+def old_url_compatibility_note() -> str:
+    """Render legacy URL compatibility instructions."""
+    return """<section class="compat-note">
+    <h2>Old URL compatibility</h2>
+    <p>Old Toolforge and Wikipedia talk-page links using <code>type</code> and <code>id</code> query parameters are still supported.</p>
   </section>"""
 
 

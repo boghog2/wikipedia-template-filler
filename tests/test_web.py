@@ -33,6 +33,8 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("name=\"add_param_space\"", page)
         self.assertIn("name=\"vertical\"", page)
         self.assertIn("Data sources", page)
+        self.assertIn("Old URL compatibility", page)
+        self.assertIn("Old Toolforge and Wikipedia talk-page links", page)
         self.assertIn("XML output", page)
         self.assertIn("&amp;format=xml", page)
         self.assertIn("{{cite journal}}", page)
