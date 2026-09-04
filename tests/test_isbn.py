@@ -76,7 +76,7 @@ class IsbnTests(unittest.TestCase):
                 }
             }
 
-        self.assertEqual(fill_isbn(golden["id"], json_fetcher=fake_fetcher, **golden["options"]), golden["output"])
+        self.assertEqual(fill_isbn(golden["id"], json_fetcher=fake_fetcher, extended=True, **golden["options"]), golden["output"])
 
     def test_fetch_openlibrary_book_raises_for_missing_record(self):
         with self.assertRaisesRegex(SourceLookupError, "no book matches"):

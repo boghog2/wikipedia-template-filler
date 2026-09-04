@@ -29,6 +29,7 @@ class GoldenOutputTests(unittest.TestCase):
                     normalized["template"],
                     normalized["fields"],
                     **normalized["options"],
+                    include_empty=True,
                 )
                 self.assertEqual(output, golden["output"])
 

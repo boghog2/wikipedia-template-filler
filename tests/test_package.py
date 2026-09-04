@@ -84,7 +84,16 @@ class PackageTests(unittest.TestCase):
                 exit_code = main(["fill", "pmid", "18535242", "--add-param-space"])
         self.assertEqual(exit_code, 0)
         self.assertEqual(stdout.getvalue(), "{{cite journal}}\n")
-        fake_fill.assert_called_once_with("pmid", "18535242", add_param_space=True, vertical=False)
+        fake_fill.assert_called_once_with("pmid", "18535242", add_param_space=True, vertical=False, extended=False)
+
+    def test_cli_fill_subcommand_passes_extended_option(self):
+        stdout = io.StringIO()
+        with mock.patch("wikipedia_template_filler.cli.fill", return_value="{{cite journal}}") as fake_fill:
+            with contextlib.redirect_stdout(stdout):
+                exit_code = main(["fill", "pmid", "18535242", "--extended"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout.getvalue(), "{{cite journal}}\n")
+        fake_fill.assert_called_once_with("pmid", "18535242", add_param_space=False, vertical=False, extended=True)
 
     def test_cli_legacy_positional_form_still_prints_template(self):
         stdout = io.StringIO()
@@ -93,7 +102,7 @@ class PackageTests(unittest.TestCase):
                 exit_code = main(["isbn", "0721659446", "--vertical"])
         self.assertEqual(exit_code, 0)
         self.assertEqual(stdout.getvalue(), "{{cite book}}\n")
-        fake_fill.assert_called_once_with("isbn", "0721659446", add_param_space=False, vertical=True)
+        fake_fill.assert_called_once_with("isbn", "0721659446", add_param_space=False, vertical=True, extended=False)
 
     def test_smoke_script_lists_cases_without_live_network(self):
         script_path = Path(__file__).resolve().parent.parent / "scripts" / "smoke_supported_sources.py"
@@ -192,7 +201,7 @@ class PackageTests(unittest.TestCase):
                 exit_code = main(["hgnc_id", "HGNC:1582", "--add-param-space", "--vertical"])
         self.assertEqual(exit_code, 0)
         self.assertEqual(stdout.getvalue(), "{{infobox protein}}\n")
-        fake_fill.assert_called_once_with("hgnc_id", "HGNC:1582", add_param_space=True, vertical=True)
+        fake_fill.assert_called_once_with("hgnc_id", "HGNC:1582", add_param_space=True, vertical=True, extended=False)
 
 
 if __name__ == "__main__":

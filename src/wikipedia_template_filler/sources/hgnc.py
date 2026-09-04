@@ -53,6 +53,7 @@ def fill_hgnc(identifier: str, *, json_fetcher: JsonFetcher | None = None, **opt
         gene_fields(gene),
         add_param_space=bool(options.get("add_param_space", False)),
         vertical=True,
+        include_empty=bool(options.get("extended", False)),
     )
 
 

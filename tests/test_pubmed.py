@@ -135,7 +135,7 @@ class PubMedTests(unittest.TestCase):
             self.assertEqual(url, pubmed_url(golden["id"]))
             return pubmed_xml()
 
-        self.assertEqual(fill_pubmed(golden["id"], xml_fetcher=fake_fetcher, **golden["options"]), golden["output"])
+        self.assertEqual(fill_pubmed(golden["id"], xml_fetcher=fake_fetcher, extended=True, **golden["options"]), golden["output"])
 
     def test_web_xml_response_matches_pubmed_golden_fixture(self):
         golden = load_fixture(GOLDEN_DIR, "pubmed_18535242.json")
@@ -151,6 +151,7 @@ class PubMedTests(unittest.TestCase):
                 "id": [golden["id"]],
                 "format": ["xml"],
                 "add_param_space": ["1"],
+                "extended": ["1"],
             },
             fill_func=fixture_fill,
         )
@@ -203,8 +204,16 @@ class PubMedTests(unittest.TestCase):
             add_text_url=True,
             omit_url_if_doi_filled=True,
         )
-        self.assertIn("| url = }}", omitted)
+        self.assertNotIn("| url =", omitted)
         self.assertNotIn("pubmed.ncbi.nlm.nih.gov", omitted)
+
+        extended = fill_pubmed(
+            "18535242",
+            xml_fetcher=lambda url: pubmed_xml(),
+            add_param_space=True,
+            extended=True,
+        )
+        self.assertIn("| url = }}", extended)
 
     def test_fill_pubmed_can_use_full_journal_title(self):
         output = fill_pubmed(
@@ -220,7 +229,7 @@ class PubMedTests(unittest.TestCase):
             parse_pubmed_article("<PubmedArticleSet />", expected_pmid="1")
 
     def test_public_fill_routes_to_pubmed_source(self):
-        self.assertEqual(fill("pmid", "18535242", xml_fetcher=lambda url: pubmed_xml(), add_param_space=True), load_fixture(GOLDEN_DIR, "pubmed_18535242.json")["output"])
+        self.assertEqual(fill("pmid", "18535242", xml_fetcher=lambda url: pubmed_xml(), add_param_space=True, extended=True), load_fixture(GOLDEN_DIR, "pubmed_18535242.json")["output"])
 
     def test_parse_linked_pmid(self):
         self.assertEqual(parse_linked_pmid(pmc_link_xml(), expected_pmcid="137841"), "12384568")
@@ -239,7 +248,7 @@ class PubMedTests(unittest.TestCase):
             self.assertEqual(url, pubmed_url("12384568"))
             return pmc_pubmed_xml()
 
-        self.assertEqual(fill_pmc(f"PMC{golden['id']}", xml_fetcher=fake_fetcher, **golden["options"]), golden["output"])
+        self.assertEqual(fill_pmc(f"PMC{golden['id']}", xml_fetcher=fake_fetcher, extended=True, **golden["options"]), golden["output"])
 
     def test_fill_pmc_can_use_full_journal_title(self):
         def fake_fetcher(url: str) -> str:
@@ -266,7 +275,7 @@ class PubMedTests(unittest.TestCase):
                 return pmc_link_xml()
             return pmc_pubmed_xml()
 
-        self.assertEqual(fill("pmc", "137841", xml_fetcher=fake_fetcher, add_param_space=True), load_fixture(GOLDEN_DIR, "pmc_137841.json")["output"])
+        self.assertEqual(fill("pmc", "137841", xml_fetcher=fake_fetcher, add_param_space=True, extended=True), load_fixture(GOLDEN_DIR, "pmc_137841.json")["output"])
 
 
 if __name__ == "__main__":

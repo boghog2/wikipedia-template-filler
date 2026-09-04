@@ -102,6 +102,7 @@ def render_article(article: PubMedArticle, **options: object) -> str:
         ),
         add_param_space=bool(options.get("add_param_space", False)),
         vertical=bool(options.get("vertical", False)),
+        include_empty=bool(options.get("extended", False)),
     )
 
 

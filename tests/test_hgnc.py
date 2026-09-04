@@ -75,7 +75,7 @@ class HgncTests(unittest.TestCase):
             self.assertEqual(url, hgnc_url("1582"))
             return hgnc_json()
 
-        self.assertEqual(fill_hgnc(golden["id"], json_fetcher=fake_fetcher, **golden["options"]), golden["output"])
+        self.assertEqual(fill_hgnc(golden["id"], json_fetcher=fake_fetcher, extended=True, **golden["options"]), golden["output"])
 
     def test_fetch_raises_for_missing_gene(self):
         with self.assertRaisesRegex(SourceLookupError, "no gene matches"):
@@ -83,7 +83,7 @@ class HgncTests(unittest.TestCase):
 
     def test_public_fill_routes_to_hgnc_source(self):
         self.assertEqual(
-            fill("hgnc", "HGNC:1582", json_fetcher=lambda url: hgnc_json(), add_param_space=True),
+            fill("hgnc", "HGNC:1582", json_fetcher=lambda url: hgnc_json(), add_param_space=True, extended=True),
             load_fixture(GOLDEN_DIR, "hgnc_1582_infobox_protein.json")["output"],
         )
 

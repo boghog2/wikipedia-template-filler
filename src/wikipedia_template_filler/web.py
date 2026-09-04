@@ -66,7 +66,6 @@ WEB_OPTIONS = (
     ("extended", "Show extended fields"),
     ("add_param_space", "Pad parameter names and values"),
     ("add_ref_tag", "Add ref tag"),
-    ("dont_use_etal", "Don't use et al. for author list"),
     ("omit_url_if_doi_filled", "Omit URL field if DOI field is populated (journals only)"),
     ("dont_strip_trailing_period", "Don't strip trailing period from article title"),
     ("full_journal_title", "Use full journal title"),

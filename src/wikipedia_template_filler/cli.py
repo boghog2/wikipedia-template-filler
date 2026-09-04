@@ -83,6 +83,7 @@ def add_smoke_arguments(parser: argparse.ArgumentParser) -> None:
 def add_renderer_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--add-param-space", action="store_true", help="pad template parameter names and values")
     parser.add_argument("--vertical", action="store_true", help="render one template parameter per line")
+    parser.add_argument("--extended", action="store_true", help="include commonly used empty parameters")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -108,10 +109,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return run_smoke_cases()
     if command == "fill":
         args = build_fill_parser().parse_args(args_list[1:])
-        return print_filled_template(args.source_type, args.identifier, args.add_param_space, args.vertical)
+        return print_filled_template(args.source_type, args.identifier, args.add_param_space, args.vertical, args.extended)
 
     args = build_legacy_parser().parse_args(args_list)
-    return print_filled_template(args.source_type, args.identifier, args.add_param_space, args.vertical)
+    return print_filled_template(args.source_type, args.identifier, args.add_param_space, args.vertical, args.extended)
 
 
 def build_fill_parser() -> argparse.ArgumentParser:
@@ -164,7 +165,7 @@ def run_smoke_cases(
     return 1 if failures else 0
 
 
-def print_filled_template(source_type: str, identifier: str, add_param_space: bool, vertical: bool) -> int:
+def print_filled_template(source_type: str, identifier: str, add_param_space: bool, vertical: bool, extended: bool) -> int:
     try:
         print(
             fill(
@@ -172,6 +173,7 @@ def print_filled_template(source_type: str, identifier: str, add_param_space: bo
                 identifier,
                 add_param_space=add_param_space,
                 vertical=vertical,
+                extended=extended,
             )
         )
     except TemplateFillerError as exc:

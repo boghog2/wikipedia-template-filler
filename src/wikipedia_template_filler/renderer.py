@@ -28,15 +28,17 @@ def render_template(
     *,
     add_param_space: bool = False,
     vertical: bool = False,
+    include_empty: bool = False,
 ) -> str:
     """Render a Wikipedia template with fields in the supplied order.
 
     By default this mirrors the compact Perl output style:
     ``{{cite book |isbn=...}}``. With ``add_param_space`` it pads around
     the equals sign and field separators. With ``vertical`` each parameter
-    is emitted on its own line.
+    is emitted on its own line. With ``include_empty`` it preserves
+    commonly used but blank parameters for extended output.
     """
-    normalized_fields = [_coerce_field(field) for field in fields]
+    normalized_fields = [field for field in (_coerce_field(field) for field in fields) if include_empty or field.rendered_value()]
     if vertical:
         return _render_vertical(
             template_name,

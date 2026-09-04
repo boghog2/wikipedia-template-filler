@@ -39,7 +39,6 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("gap: 6px;", page)
         self.assertIn("Show extended fields", page)
         self.assertIn("Add ref tag", page)
-        self.assertIn("Don&#x27;t use et al. for author list", page)
         self.assertIn("Omit URL field if DOI field is populated (journals only)", page)
         self.assertIn("Don&#x27;t strip trailing period from article title", page)
         self.assertIn("Use full journal title", page)
