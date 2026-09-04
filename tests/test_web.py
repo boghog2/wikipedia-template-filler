@@ -42,6 +42,19 @@ class WebAppTests(unittest.TestCase):
         self.assertNotIn("<code>url</code>", page)
         self.assertNotIn("<option value=\"drugbank_id\"", page)
 
+    def test_render_page_orders_data_source_rows(self):
+        page = web.render_page()
+        expected = [
+            "<td>PubMed ID</td><td><code>{{cite journal}}</code></td>",
+            "<td>PubMed Central ID</td><td><code>{{cite journal}}</code></td>",
+            "<td>ISBN</td><td><code>{{cite book}}</code></td>",
+            "<td>PubChem CID</td><td><code>{{chembox}}</code></td>",
+            "<td>PubChem CID</td><td><code>{{infobox drug}}</code></td>",
+            "<td>HGNC ID</td><td><code>{{infobox protein}}</code></td>",
+        ]
+        positions = [page.index(row) for row in expected]
+        self.assertEqual(positions, sorted(positions))
+
     def test_render_page_escapes_output_and_errors(self):
         page = web.render_page(output="{{cite journal|title=<bad>}}", error="x < y")
         self.assertIn("&lt;bad&gt;", page)
@@ -76,13 +89,22 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("th {", page)
         self.assertIn("text-align: center;", page)
 
+    def test_render_page_uses_vertical_data_source_table_lines(self):
+        page = web.render_page()
+        self.assertIn("border-right: 2px solid var(--line);", page)
+        self.assertIn(".data-sources td:last-child { border-right: 0; }", page)
+
+    def test_render_page_uses_outer_data_source_table_border(self):
+        page = web.render_page()
+        self.assertIn("outline: 2px solid var(--line);", page)
+        self.assertIn("outline-offset: -2px;", page)
+
     def test_render_page_standardizes_data_source_cell_text(self):
         page = web.render_page()
         self.assertIn(".data-sources td {", page)
         self.assertIn("font-size: 14px;", page)
         self.assertIn(".data-sources td code {", page)
         self.assertIn("font: inherit;", page)
-
 
     def test_render_page_sizes_data_sources_table_to_contents(self):
         page = web.render_page()

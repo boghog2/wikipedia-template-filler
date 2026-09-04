@@ -50,9 +50,25 @@ SOURCE_EXAMPLES = {
 
 
 
+WEB_DATA_SOURCE_ORDER = (
+    "pubmed_id",
+    "pubmedcentral_id",
+    "isbn",
+    "pubchem_id",
+    "pubchem_cid",
+    "hgnc_id",
+)
+
+
 def supported_sources() -> tuple[SourceSpec, ...]:
     """Return sources that can currently generate templates."""
     return tuple(spec for spec in SUPPORTED_SOURCES if spec.status == "supported")
+
+
+def data_table_sources() -> tuple[SourceSpec, ...]:
+    """Return supported sources in the legacy web table display order."""
+    by_source_type = {spec.source_type: spec for spec in supported_sources()}
+    return tuple(by_source_type[source_type] for source_type in WEB_DATA_SOURCE_ORDER if source_type in by_source_type)
 
 
 def render_page(
@@ -219,12 +235,16 @@ textarea {{
   max-width: none;
   border-collapse: collapse;
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 2px solid var(--line);
+  outline: 2px solid var(--line);
+  outline-offset: -2px;
   border-radius: 8px;
   overflow: hidden;
 }}
-th, td {{
-  border-bottom: 1px solid var(--line);
+.data-sources th,
+.data-sources td {{
+  border-right: 2px solid var(--line);
+  border-bottom: 2px solid var(--line);
   padding: 9px 10px;
   text-align: left;
   white-space: nowrap;
@@ -243,7 +263,9 @@ th {{
   font-size: 13px;
   font-weight: 700;
 }}
-tr:last-child td {{ border-bottom: 0; }}
+.data-sources th:last-child,
+.data-sources td:last-child {{ border-right: 0; }}
+.data-sources tr:last-child td {{ border-bottom: 0; }}
 .status-pending, .status-unsupported {{ color: var(--muted); }}
 .secondary {{ background: #435062; }}
 .secondary:hover {{ background: #303b4b; }}
@@ -330,7 +352,7 @@ def unavailable_selected_source(selected: str) -> SourceSpec | None:
 
 def data_sources_table() -> str:
     """Render a compact table of recognized legacy data sources."""
-    rows = "\n".join(data_source_row(spec) for spec in supported_sources())
+    rows = "\n".join(data_source_row(spec) for spec in data_table_sources())
     return f"""<section class="data-sources">
     <h2>Data sources</h2>
     <table>
