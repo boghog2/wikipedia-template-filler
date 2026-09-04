@@ -284,7 +284,7 @@ th {{
   </header>
   {error_block(error)}
   {result_block(output)}
-  <p class="intro">Enter an HGNC ID, ISBN, PubMed ID, PubMed Central ID, or PubChem CID and press Submist to fill out an appropriate template that can be pasted into a Wikipedia article:</p>
+  <p class="intro">Enter an PubMed ID, PubMed Central ID, ISBN, PubChem CID, or HGNC ID and press Submit to fill out an appropriate template that can be pasted into a Wikipedia article:</p>
   <form method="get" action="/">
     <label>Source
       <select name="type">
