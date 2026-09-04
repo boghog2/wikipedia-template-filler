@@ -27,7 +27,7 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("input name=\"id\"", page)
         self.assertIn('<label class="identifier-field">Identifier', page)
         self.assertIn(".identifier-field { max-width: 340px; }", page)
-        self.assertIn('<button class="submit-button" type="submit">Submist</button>', page)
+        self.assertIn('<button class="submit-button" type="submit">Submit</button>', page)
         self.assertIn(".submit-button {", page)
         self.assertIn("padding: 0 8px;", page)
         self.assertIn("name=\"add_param_space\"", page)

@@ -317,7 +317,7 @@ th {{
     <label class="identifier-field">Identifier
       <input name="id" type="text" value="{html.escape(identifier)}" autocomplete="off" autofocus>
     </label>
-    <button class="submit-button" type="submit">Submist</button>
+    <button class="submit-button" type="submit">Submit</button>
     <div class="options">
       <label><input type="checkbox" name="add_param_space" value="1" {checked(add_param_space)}> Parameter spacing</label>
       <label><input type="checkbox" name="vertical" value="1" {checked(vertical)}> Vertical output</label>
