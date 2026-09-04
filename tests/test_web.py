@@ -55,6 +55,20 @@ class WebAppTests(unittest.TestCase):
         positions = [page.index(row) for row in expected]
         self.assertEqual(positions, sorted(positions))
 
+    def test_render_page_orders_source_dropdown_like_data_table(self):
+        page = web.render_page()
+        expected = [
+            "PubMed ID -&gt; cite journal",
+            "PubMed Central ID -&gt; cite journal",
+            "ISBN -&gt; cite book",
+            "PubChem CID -&gt; chembox",
+            "PubChem CID -&gt; infobox drug",
+            "HGNC ID -&gt; infobox protein",
+        ]
+        positions = [page.index(label) for label in expected]
+        self.assertEqual(positions, sorted(positions))
+
+
     def test_render_page_escapes_output_and_errors(self):
         page = web.render_page(output="{{cite journal|title=<bad>}}", error="x < y")
         self.assertIn("&lt;bad&gt;", page)

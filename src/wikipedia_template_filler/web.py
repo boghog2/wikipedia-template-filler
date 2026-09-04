@@ -50,7 +50,7 @@ SOURCE_EXAMPLES = {
 
 
 
-WEB_DATA_SOURCE_ORDER = (
+WEB_SOURCE_ORDER = (
     "pubmed_id",
     "pubmedcentral_id",
     "isbn",
@@ -65,10 +65,10 @@ def supported_sources() -> tuple[SourceSpec, ...]:
     return tuple(spec for spec in SUPPORTED_SOURCES if spec.status == "supported")
 
 
-def data_table_sources() -> tuple[SourceSpec, ...]:
-    """Return supported sources in the legacy web table display order."""
+def ordered_web_sources() -> tuple[SourceSpec, ...]:
+    """Return supported sources in the legacy web display order."""
     by_source_type = {spec.source_type: spec for spec in supported_sources()}
-    return tuple(by_source_type[source_type] for source_type in WEB_DATA_SOURCE_ORDER if source_type in by_source_type)
+    return tuple(by_source_type[source_type] for source_type in WEB_SOURCE_ORDER if source_type in by_source_type)
 
 
 def render_page(
@@ -331,7 +331,7 @@ def source_options(selected: str) -> str:
         options.append(
             f'<option value="{html.escape(value)}" selected disabled>{html.escape(label)}</option>'
         )
-    for spec in supported_sources():
+    for spec in ordered_web_sources():
         value = SOURCE_VALUES.get(spec.source_type, spec.source_type)
         label = f"{SOURCE_LABELS.get(spec.source_type, spec.source_type)} -> {spec.template}"
         selected_attr = " selected" if selected_unavailable is None and selected in (value, spec.source_type, *spec.aliases) else ""
@@ -352,7 +352,7 @@ def unavailable_selected_source(selected: str) -> SourceSpec | None:
 
 def data_sources_table() -> str:
     """Render a compact table of recognized legacy data sources."""
-    rows = "\n".join(data_source_row(spec) for spec in data_table_sources())
+    rows = "\n".join(data_source_row(spec) for spec in ordered_web_sources())
     return f"""<section class="data-sources">
     <h2>Data sources</h2>
     <table>
