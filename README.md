@@ -180,6 +180,13 @@ wikipedia-template-filler uniprot P02769 --add-param-space --extended
 wikipedia-template-filler gene 280717 --add-param-space --extended
 ```
 
+When a UniProt record has multiple PDB cross-references, the `PDB` field uses
+the separator expected by `{{Infobox nonhuman protein}}`:
+
+```wiki
+| PDB = 1MI6+1MVR+4GMK+4GSB
+```
+
 DrugBank/drugbox is explicitly unsupported.
 
 The local web app accepts legacy CGI-style query parameters used by old links, such as `/?type=pubmed_id&id=18535242&add_param_space=1` and `/?type=pubchem_id&id=2244`. The newer `/fill?source_type=pmid&identifier=18535242` form remains supported too.
