@@ -96,6 +96,25 @@ hidden prompts rather than passing secrets as command-line arguments:
 ```bash
 toolforge envvars create NCBI_API_KEY
 toolforge envvars create NCBI_EMAIL
+toolforge envvars list
+```
+
+If either variable already exists, update it instead of creating it:
+
+```bash
+toolforge envvars update NCBI_API_KEY
+toolforge envvars update NCBI_EMAIL
+```
+
+The values are injected into the Kubernetes webservice after restart. To verify
+them from a Toolforge Python shell without printing the secrets:
+
+```bash
+python3 - <<'PY'
+import os
+print("NCBI_API_KEY present:", bool(os.environ.get("NCBI_API_KEY")))
+print("NCBI_EMAIL present:", bool(os.environ.get("NCBI_EMAIL")))
+PY
 ```
 
 Deployment sanity checklist:
