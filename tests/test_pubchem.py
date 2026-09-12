@@ -18,14 +18,16 @@ from wikipedia_template_filler.sources.pubchem import (
     normalize_cid,
     parse_property_response,
     parse_synonyms_response,
-    parse_wikidata_response,
     formula_elements,
     property_url,
     registry_id_from_xrefs,
     registry_identifiers,
     synonyms_url,
-    wikidata_url,
     xrefs_url,
+)
+from wikipedia_template_filler.sources.wikidata import (
+    drug_identifier_url,
+    parse_drug_identifier_response,
 )
 
 
@@ -148,7 +150,13 @@ class PubChemTests(unittest.TestCase):
 
     def test_wikidata_url_queries_pubchem_cid_and_inchikey(self):
         compound = fetch_pubchem_compound("2244", fetcher=fake_fetcher)
-        query = unquote_plus(parse_qs(urlparse(wikidata_url(compound)).query)["query"][0])
+        query = unquote_plus(
+            parse_qs(
+                urlparse(
+                    drug_identifier_url(pubchem_cid=compound.cid, inchikey=compound.inchikey)
+                ).query
+            )["query"][0]
+        )
 
         self.assertIn('?item wdt:P662 "2244".', query)
         self.assertIn('?item wdt:P235 "BSYNRYMUTXBXSQ-UHFFFAOYSA-N".', query)
@@ -156,7 +164,7 @@ class PubChemTests(unittest.TestCase):
         self.assertIn("?item wdt:P595 ?iuphar.", query)
 
     def test_parse_wikidata_response_normalizes_drug_identifiers(self):
-        identifiers = parse_wikidata_response(wikidata_payload())
+        identifiers = parse_drug_identifier_response(wikidata_payload())
         self.assertEqual(identifiers["pubchem"], "2244")
         self.assertEqual(identifiers["chemspider"], "2157")
         self.assertEqual(identifiers["iuphar_ligand"], "4139")

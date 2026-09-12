@@ -8,14 +8,14 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlencode
+from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from wikipedia_template_filler._http import USER_AGENT
 from wikipedia_template_filler.api import TemplateFillerError
+from wikipedia_template_filler.sources.wikidata import enrich_drug_identifiers
 
 PUBCHEM_PUG_REST_BASE = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
-WIKIDATA_SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
 PROPERTY_NAMES = (
     "MolecularFormula",
     "MolecularWeight",
@@ -146,88 +146,43 @@ def fetch_pubchem_compound(cid: str, *, fetcher: JsonFetcher) -> PubChemCompound
 
 def enrich_compound_from_wikidata(compound: PubChemCompound, *, fetcher: JsonFetcher) -> PubChemCompound:
     """Fill missing drug identifiers from Wikidata when possible."""
-    if not compound.cid and not compound.inchikey:
-        return compound
+    identifiers = {
+        "pubchem": compound.cid,
+        "inchikey": compound.inchikey,
+        "chebi": compound.chebi,
+        "chembl": compound.chembl,
+        "drug_bank": compound.drug_bank,
+        "chemspider": compound.chemspider,
+        "iuphar_ligand": compound.iuphar_ligand,
+        "unii": compound.unii,
+    }
     try:
-        identifiers = parse_wikidata_response(fetcher(wikidata_url(compound)))
+        enriched = enrich_drug_identifiers(
+            identifiers,
+            pubchem_cid=compound.cid,
+            inchikey=compound.inchikey,
+            fetcher=fetcher,
+        )
     except SourceLookupError:
         return compound
     return PubChemCompound(
-        cid=compound.cid or identifiers["pubchem"],
+        cid=compound.cid or enriched["pubchem"],
         title=compound.title,
         molecular_formula=compound.molecular_formula,
         molecular_weight=compound.molecular_weight,
         smiles=compound.smiles,
         inchi=compound.inchi,
-        inchikey=compound.inchikey or identifiers["inchikey"],
+        inchikey=compound.inchikey or enriched["inchikey"],
         iupac_name=compound.iupac_name,
         cas=compound.cas,
-        chebi=compound.chebi or identifiers["chebi"],
-        chembl=compound.chembl or identifiers["chembl"],
-        drug_bank=compound.drug_bank or identifiers["drug_bank"],
-        chemspider=compound.chemspider or identifiers["chemspider"],
-        iuphar_ligand=compound.iuphar_ligand or identifiers["iuphar_ligand"],
+        chebi=compound.chebi or enriched["chebi"],
+        chembl=compound.chembl or enriched["chembl"],
+        drug_bank=compound.drug_bank or enriched["drug_bank"],
+        chemspider=compound.chemspider or enriched["chemspider"],
+        iuphar_ligand=compound.iuphar_ligand or enriched["iuphar_ligand"],
         kegg=compound.kegg,
-        unii=compound.unii or identifiers["unii"],
+        unii=compound.unii or enriched["unii"],
     )
-
-
-def wikidata_url(compound: PubChemCompound) -> str:
-    """Build a Wikidata SPARQL URL for a PubChem/InChIKey compound lookup."""
-    match_patterns = []
-    if compound.cid:
-        match_patterns.append(f"?item wdt:P662 {sparql_string(compound.cid)}.")
-    if compound.inchikey:
-        match_patterns.append(f"?item wdt:P235 {sparql_string(compound.inchikey)}.")
-    query = f"""
-SELECT ?item ?inchikey ?pubchem ?chemspider ?iuphar ?drugbank ?chebi ?chembl ?unii WHERE {{
-  {" UNION ".join("{ " + pattern + " }" for pattern in match_patterns)}
-  OPTIONAL {{ ?item wdt:P235 ?inchikey. }}
-  OPTIONAL {{ ?item wdt:P662 ?pubchem. }}
-  OPTIONAL {{ ?item wdt:P661 ?chemspider. }}
-  OPTIONAL {{ ?item wdt:P595 ?iuphar. }}
-  OPTIONAL {{ ?item wdt:P715 ?drugbank. }}
-  OPTIONAL {{ ?item wdt:P683 ?chebi. }}
-  OPTIONAL {{ ?item wdt:P592 ?chembl. }}
-  OPTIONAL {{ ?item wdt:P652 ?unii. }}
-}}
-LIMIT 1
-""".strip()
-    return f"{WIKIDATA_SPARQL_ENDPOINT}?{urlencode({'query': query, 'format': 'json'})}"
-
-
-def sparql_string(value: str) -> str:
-    """Return a quoted SPARQL string literal."""
-    return json.dumps(value)
-
-
-def parse_wikidata_response(payload: Mapping[str, Any]) -> dict[str, str]:
-    """Return drug identifiers from a Wikidata SPARQL JSON response."""
-    bindings = payload.get("results", {}).get("bindings", [])
-    first = bindings[0] if isinstance(bindings, list) and bindings else {}
-    if not isinstance(first, Mapping):
-        first = {}
-    return {
-        "inchikey": wikidata_binding(first, "inchikey"),
-        "pubchem": wikidata_binding(first, "pubchem"),
-        "chemspider": wikidata_binding(first, "chemspider"),
-        "iuphar_ligand": wikidata_binding(first, "iuphar"),
-        "drug_bank": wikidata_binding(first, "drugbank"),
-        "chebi": normalize_prefixed_identifier(wikidata_binding(first, "chebi"), "CHEBI:"),
-        "chembl": normalize_prefixed_identifier(wikidata_binding(first, "chembl"), "CHEMBL"),
-        "unii": wikidata_binding(first, "unii"),
-    }
-
-
-def wikidata_binding(binding: Mapping[str, Any], name: str) -> str:
-    """Return one SPARQL binding value."""
-    value = binding.get(name, {})
-    return str(value.get("value", "")) if isinstance(value, Mapping) else ""
-
-
-def normalize_prefixed_identifier(value: str, prefix: str) -> str:
-    """Strip an optional external-ID prefix from values that templates expect bare."""
-    return value[len(prefix):] if value.upper().startswith(prefix) else value
 
 
 def parse_property_response(payload: Mapping[str, Any], *, expected_cid: str | None = None) -> Mapping[str, Any]:
