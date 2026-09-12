@@ -13,15 +13,19 @@ class WebAppTests(unittest.TestCase):
         page = web.render_page(source_type="hgnc", identifier="HGNC:1582")
         self.assertIn("Wikipedia Template Filler", page)
         self.assertIn('<div class="version">v0.2.0 <span class="runtime">python</span></div>', page)
-        self.assertIn("Enter an PubMed ID, PubMed Central ID, ISBN, PubChem CID, or HGNC ID", page)
+        self.assertIn("Enter a PubMed ID, PubMed Central ID, ISBN, PubChem CID, HGNC ID, UniProt accession, or NCBI Gene ID", page)
         self.assertIn("PubMed ID -&gt; cite journal", page)
         self.assertIn("PubMed Central ID -&gt; cite journal", page)
         self.assertIn("HGNC ID -&gt; infobox protein", page)
+        self.assertIn("UniProt accession -&gt; Infobox nonhuman protein", page)
+        self.assertIn("NCBI Gene ID -&gt; Infobox nonhuman protein", page)
         self.assertIn("PubChem CID -&gt; infobox drug", page)
         self.assertIn("PubChem CID -&gt; chembox", page)
         self.assertIn('option value="pubmed_id"', page)
         self.assertIn('option value="pubmedcentral_id"', page)
         self.assertIn('option value="hgnc_id" selected', page)
+        self.assertIn('option value="uniprot"', page)
+        self.assertIn('option value="gene"', page)
         self.assertIn("option value=\"pubchem_id\"", page)
         self.assertIn("select name=\"type\"", page)
         self.assertIn("input name=\"id\"", page)
@@ -68,6 +72,8 @@ class WebAppTests(unittest.TestCase):
             "<td>PubChem CID</td><td><code>{{chembox}}</code></td>",
             "<td>PubChem CID</td><td><code>{{infobox drug}}</code></td>",
             "<td>HGNC ID</td><td><code>{{infobox protein}}</code></td>",
+            "<td>UniProt accession</td><td><code>{{Infobox nonhuman protein}}</code></td>",
+            "<td>NCBI Gene ID</td><td><code>{{Infobox nonhuman protein}}</code></td>",
         ]
         positions = [page.index(row) for row in expected]
         self.assertEqual(positions, sorted(positions))
@@ -81,6 +87,8 @@ class WebAppTests(unittest.TestCase):
             "PubChem CID -&gt; chembox",
             "PubChem CID -&gt; infobox drug",
             "HGNC ID -&gt; infobox protein",
+            "UniProt accession -&gt; Infobox nonhuman protein",
+            "NCBI Gene ID -&gt; Infobox nonhuman protein",
         ]
         positions = [page.index(label) for label in expected]
         self.assertEqual(positions, sorted(positions))

@@ -24,6 +24,8 @@ SOURCE_VALUES = {
     "pubmed_id": "pubmed_id",
     "pubmedcentral_id": "pubmedcentral_id",
     "hgnc_id": "hgnc_id",
+    "uniprot_id": "uniprot",
+    "ncbi_gene_id": "gene",
     "isbn": "isbn",
     "pubchem_cid": "pubchem",
     "pubchem_id": "pubchem_id",
@@ -33,6 +35,8 @@ SOURCE_VALUES = {
 SOURCE_LABELS = {
     "drugbank_id": "DrugBank ID",
     "hgnc_id": "HGNC ID",
+    "uniprot_id": "UniProt accession",
+    "ncbi_gene_id": "NCBI Gene ID",
     "isbn": "ISBN",
     "pubmed_id": "PubMed ID",
     "pubmedcentral_id": "PubMed Central ID",
@@ -43,6 +47,8 @@ SOURCE_LABELS = {
 SOURCE_EXAMPLES = {
     "drugbank_id": "DB00328",
     "hgnc_id": "12403",
+    "uniprot_id": "P02769",
+    "ncbi_gene_id": "280717",
     "isbn": "0-7216-5944-6",
     "pubmed_id": "123455",
     "pubmedcentral_id": "137841",
@@ -60,6 +66,8 @@ WEB_SOURCE_ORDER = (
     "pubchem_id",
     "pubchem_cid",
     "hgnc_id",
+    "uniprot_id",
+    "ncbi_gene_id",
 )
 WEB_OPTIONS = (
     ("vertical", "Fill vertically (cite templates only)"),
@@ -327,7 +335,7 @@ th {{
   </header>
   {error_block(error)}
   {result_block(output)}
-  <p class="intro">Enter an PubMed ID, PubMed Central ID, ISBN, PubChem CID, or HGNC ID and press Submit to fill out an appropriate template that can be pasted into a Wikipedia article:</p>
+  <p class="intro">Enter a PubMed ID, PubMed Central ID, ISBN, PubChem CID, HGNC ID, UniProt accession, or NCBI Gene ID and press Submit to fill out an appropriate template that can be pasted into a Wikipedia article:</p>
   <form method="get" action="/">
     <label>Source
       <select name="type">

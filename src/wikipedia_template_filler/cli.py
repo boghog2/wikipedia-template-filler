@@ -28,6 +28,8 @@ SMOKE_CASES: tuple[SmokeCase, ...] = (
     SmokeCase("pubmedcentral_id", "137841", "{{cite journal", "PubMed Central ID -> cite journal"),
     SmokeCase("isbn", "0-7216-5944-6", "{{cite book", "ISBN -> cite book"),
     SmokeCase("hgnc_id", "HGNC:1582", "{{infobox protein", "HGNC ID -> infobox protein"),
+    SmokeCase("uniprot_id", "P02769", "{{Infobox nonhuman protein", "UniProt accession -> infobox nonhuman protein"),
+    SmokeCase("ncbi_gene_id", "280717", "{{Infobox nonhuman protein", "NCBI Gene ID -> infobox nonhuman protein"),
     SmokeCase("pubchem_cid", "2244", "{{Infobox drug", "PubChem CID -> infobox drug"),
     SmokeCase("pubchem_id", "2244", "{{chembox", "PubChem CID -> chembox"),
 )

@@ -42,6 +42,8 @@ SUPPORTED_SOURCES: tuple[SourceSpec, ...] = (
         aliases=("pmc", "pmcid", "pubmed_central_id"),
     ),
     SourceSpec("hgnc_id", "infobox protein", "supported", aliases=("hgnc",)),
+    SourceSpec("uniprot_id", "Infobox nonhuman protein", "supported", aliases=("uniprot", "uniprotkb")),
+    SourceSpec("ncbi_gene_id", "Infobox nonhuman protein", "supported", aliases=("gene", "gene_id", "ncbi_gene")),
     SourceSpec("isbn", "cite book", "supported"),
     SourceSpec("pubchem_cid", "infobox drug", "supported", aliases=("pubchem", "cid", "drug")),
     SourceSpec("pubchem_id", "chembox", "supported", aliases=("chembox", "pubchem_chembox")),
@@ -115,6 +117,14 @@ class TemplateFiller:
             from wikipedia_template_filler.sources.hgnc import fill_hgnc
 
             return fill_hgnc(identifier, **merged_options)
+        if spec.source_type == "uniprot_id":
+            from wikipedia_template_filler.sources.nonhuman_protein import fill_uniprot
+
+            return fill_uniprot(identifier, **merged_options)
+        if spec.source_type == "ncbi_gene_id":
+            from wikipedia_template_filler.sources.nonhuman_protein import fill_ncbi_gene
+
+            return fill_ncbi_gene(identifier, **merged_options)
         if spec.source_type == "pubchem_cid":
             from wikipedia_template_filler.sources.pubchem import fill_pubchem
 

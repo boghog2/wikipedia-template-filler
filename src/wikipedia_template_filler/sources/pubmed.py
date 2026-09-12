@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import re
 import xml.etree.ElementTree as ET
 from collections.abc import Callable
@@ -14,13 +13,11 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from wikipedia_template_filler._http import USER_AGENT
+from wikipedia_template_filler._ncbi import NCBI_API_KEY_ENV, NCBI_EMAIL_ENV, NCBI_TOOL, ncbi_query_params
 from wikipedia_template_filler.api import TemplateFillerError
 from wikipedia_template_filler.renderer import render_template
 
 NCBI_EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
-NCBI_API_KEY_ENV = "NCBI_API_KEY"
-NCBI_EMAIL_ENV = "NCBI_EMAIL"
-NCBI_TOOL = "wikipedia-template-filler"
 MONTHS = {
     "jan": "January",
     "feb": "February",
@@ -133,20 +130,6 @@ def pmc_to_pubmed_url(pmcid: str) -> str:
     """Build the NCBI elink URL that maps a PMCID to its PubMed ID."""
     query = urlencode(ncbi_query_params({"dbfrom": "pmc", "db": "pubmed", "id": pmcid, "retmode": "xml"}))
     return f"{NCBI_EUTILS_BASE}/elink.fcgi?{query}"
-
-
-def ncbi_query_params(params: dict[str, str]) -> dict[str, str]:
-    """Return E-utilities query parameters with optional NCBI credentials."""
-    query_params = dict(params)
-    api_key = os.environ.get(NCBI_API_KEY_ENV, "").strip()
-    email = os.environ.get(NCBI_EMAIL_ENV, "").strip()
-    if api_key:
-        query_params["api_key"] = api_key
-    if email:
-        query_params["tool"] = NCBI_TOOL
-        query_params["email"] = email
-    return query_params
-
 
 def fetch_xml(url: str) -> str:
     """Fetch XML from *url* using the standard library."""

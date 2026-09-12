@@ -147,6 +147,15 @@ HGNC lookup is implemented through the public genenames.org REST API:
 wikipedia-template-filler hgnc HGNC:1582 --add-param-space
 ```
 
+Non-human protein lookup is implemented through UniProtKB and NCBI Gene. UniProt
+input uses NCBI Gene cross-references when available to fill genomic location
+fields:
+
+```bash
+wikipedia-template-filler uniprot P02769 --add-param-space --extended
+wikipedia-template-filler gene 280717 --add-param-space --extended
+```
+
 DrugBank/drugbox is explicitly unsupported.
 
 The local web app accepts legacy CGI-style query parameters used by old links, such as `/?type=pubmed_id&id=18535242&add_param_space=1` and `/?type=pubchem_id&id=2244`. The newer `/fill?source_type=pmid&identifier=18535242` form remains supported too.
@@ -171,4 +180,5 @@ The XML response uses the same compatibility wrapper as the Perl tool: `wikitool
 3. PubMed/PMC via NCBI E-utilities
 4. HGNC via HGNC REST API
 5. PubChem CID via PubChem PUG REST
-6. Explicit unsupported behavior for DrugBank/drugbox
+6. Non-human protein infoboxes via UniProtKB and NCBI Gene
+7. Explicit unsupported behavior for DrugBank/drugbox

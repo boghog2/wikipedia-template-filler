@@ -30,6 +30,8 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(filler.source_spec("pmid").status, "supported")
         self.assertEqual(filler.source_spec("pmc").status, "supported")
         self.assertEqual(filler.source_spec("hgnc").status, "supported")
+        self.assertEqual(filler.source_spec("uniprot").status, "supported")
+        self.assertEqual(filler.source_spec("gene").status, "supported")
         self.assertEqual(filler.source_spec("isbn").status, "supported")
         self.assertEqual(filler.source_spec("pubchem").status, "supported")
         self.assertEqual(filler.source_spec("chembox").status, "supported")
@@ -41,6 +43,8 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(filler.source_spec("PMID").source_type, "pubmed_id")
         self.assertEqual(filler.source_spec("pmc").source_type, "pubmedcentral_id")
         self.assertEqual(filler.source_spec("HGNC").template, "infobox protein")
+        self.assertEqual(filler.source_spec("uniprotkb").template, "Infobox nonhuman protein")
+        self.assertEqual(filler.source_spec("ncbi_gene").template, "Infobox nonhuman protein")
         self.assertEqual(filler.source_spec("drug").template, "infobox drug")
         self.assertEqual(filler.source_spec("pubchem_id").template, "chembox")
 
