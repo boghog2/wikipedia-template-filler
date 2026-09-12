@@ -1,5 +1,6 @@
 import unittest
 from unittest import mock
+from urllib.parse import parse_qs, unquote_plus, urlparse
 
 from wikipedia_template_filler import fill
 from wikipedia_template_filler._http import USER_AGENT
@@ -7,6 +8,7 @@ from wikipedia_template_filler.sources.pubchem import (
     SourceLookupError,
     as_list,
     compound_fields,
+    enrich_compound_from_wikidata,
     fetch_json,
     fetch_pubchem_compound,
     fill_pubchem,
@@ -16,11 +18,13 @@ from wikipedia_template_filler.sources.pubchem import (
     normalize_cid,
     parse_property_response,
     parse_synonyms_response,
+    parse_wikidata_response,
     formula_elements,
     property_url,
     registry_id_from_xrefs,
     registry_identifiers,
     synonyms_url,
+    wikidata_url,
     xrefs_url,
 )
 
@@ -69,6 +73,25 @@ def xrefs_payload() -> dict:
     return {"InformationList": {"Information": []}}
 
 
+def wikidata_payload() -> dict:
+    return {
+        "results": {
+            "bindings": [
+                {
+                    "inchikey": {"type": "literal", "value": "BSYNRYMUTXBXSQ-UHFFFAOYSA-N"},
+                    "pubchem": {"type": "literal", "value": "2244"},
+                    "chemspider": {"type": "literal", "value": "2157"},
+                    "iuphar": {"type": "literal", "value": "4139"},
+                    "drugbank": {"type": "literal", "value": "DB00945"},
+                    "chebi": {"type": "literal", "value": "CHEBI:15365"},
+                    "chembl": {"type": "literal", "value": "CHEMBL25"},
+                    "unii": {"type": "literal", "value": "R16CO5Y76E"},
+                }
+            ]
+        }
+    }
+
+
 def fake_fetcher(url: str) -> dict:
     if url == property_url("2244"):
         return property_payload()
@@ -76,6 +99,8 @@ def fake_fetcher(url: str) -> dict:
         return synonyms_payload()
     if url == xrefs_url("2244"):
         return xrefs_payload()
+    if url.startswith("https://query.wikidata.org/sparql?"):
+        return wikidata_payload()
     raise AssertionError(f"unexpected URL {url}")
 
 
@@ -121,6 +146,36 @@ class PubChemTests(unittest.TestCase):
         xrefs = {"InformationList": {"Information": [{"SourceName": ["ChEMBL"], "RegistryID": ["CHEMBL25"]}]}}
         self.assertEqual(registry_id_from_xrefs(xrefs, ("ChEMBL",), r"^CHEMBL(\d+)$"), "25")
 
+    def test_wikidata_url_queries_pubchem_cid_and_inchikey(self):
+        compound = fetch_pubchem_compound("2244", fetcher=fake_fetcher)
+        query = unquote_plus(parse_qs(urlparse(wikidata_url(compound)).query)["query"][0])
+
+        self.assertIn('?item wdt:P662 "2244".', query)
+        self.assertIn('?item wdt:P235 "BSYNRYMUTXBXSQ-UHFFFAOYSA-N".', query)
+        self.assertIn("?item wdt:P661 ?chemspider.", query)
+        self.assertIn("?item wdt:P595 ?iuphar.", query)
+
+    def test_parse_wikidata_response_normalizes_drug_identifiers(self):
+        identifiers = parse_wikidata_response(wikidata_payload())
+        self.assertEqual(identifiers["pubchem"], "2244")
+        self.assertEqual(identifiers["chemspider"], "2157")
+        self.assertEqual(identifiers["iuphar_ligand"], "4139")
+        self.assertEqual(identifiers["drug_bank"], "DB00945")
+        self.assertEqual(identifiers["chebi"], "15365")
+        self.assertEqual(identifiers["chembl"], "25")
+        self.assertEqual(identifiers["unii"], "R16CO5Y76E")
+
+    def test_wikidata_enrichment_fills_missing_drug_identifiers(self):
+        compound = fetch_pubchem_compound("2244", fetcher=fake_fetcher)
+        enriched = enrich_compound_from_wikidata(compound, fetcher=fake_fetcher)
+        fields = dict(compound_fields(enriched))
+
+        self.assertEqual(fields["ChemSpiderID"], "2157")
+        self.assertEqual(fields["IUPHAR_ligand"], "4139")
+        self.assertEqual(fields["DrugBank"], "DB00945")
+        self.assertEqual(fields["ChEBI"], "15365")
+        self.assertEqual(fields["ChEMBL"], "25")
+
     def test_fetch_pubchem_compound_fields(self):
         compound = fetch_pubchem_compound("2244", fetcher=fake_fetcher)
         fields = dict(compound_fields(compound))
@@ -141,7 +196,9 @@ class PubChemTests(unittest.TestCase):
         self.assertIn("<!-- Chemical and physical data -->", output)
         self.assertIn("|drug_name=Aspirin", output)
         self.assertIn("|PubChem=2244", output)
+        self.assertIn("|IUPHAR_ligand=4139", output)
         self.assertIn("|ChEBI=15365", output)
+        self.assertIn("|ChemSpiderID=2157", output)
         self.assertIn("| C=9 | H=8 | O=4", output)
         self.assertNotIn("|Ag=", output)
         self.assertNotIn("|charge=", output)
@@ -152,6 +209,8 @@ class PubChemTests(unittest.TestCase):
         self.assertIn("| drug_name               = Aspirin", output)
         self.assertIn("| INN                     = ", output)
         self.assertIn("| PubChem                 = 2244", output)
+        self.assertIn("| IUPHAR_ligand           = 4139", output)
+        self.assertIn("| ChemSpiderID            = 2157", output)
         self.assertIn("| C = 9 | H = 8 | O = 4", output)
         self.assertIn("| StdInChIKey             = BSYNRYMUTXBXSQ-UHFFFAOYSA-N", output)
 
