@@ -121,6 +121,14 @@ print("NCBI_EMAIL present:", bool(os.environ.get("NCBI_EMAIL")))
 PY
 ```
 
+If you have a Royal Society of Chemistry ChemSpider API key, configure it as
+`RSC_API_KEY` to let `{{Infobox drug}}` fill a missing `ChemSpiderID` from an
+InChIKey lookup. `CHEMSPIDER_API_KEY` is also accepted as an alias:
+
+```bash
+toolforge envvars create RSC_API_KEY
+```
+
 Deployment sanity checklist:
 
 - Package installs into the active Toolforge virtual environment with `python -m pip install -e .`.
@@ -163,6 +171,10 @@ PubChem CID lookup is implemented through PubChem PUG REST and can generate eith
 wikipedia-template-filler pubchem 2244 --add-param-space
 wikipedia-template-filler chembox 2244
 ```
+
+`{{Infobox drug}}` output is enriched from Wikidata when possible. If
+`RSC_API_KEY` or `CHEMSPIDER_API_KEY` is set, a missing `ChemSpiderID` can also
+be filled through the RSC ChemSpider API using the compound InChIKey.
 
 HGNC lookup is implemented through the public genenames.org REST API:
 

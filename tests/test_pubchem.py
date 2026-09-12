@@ -4,10 +4,20 @@ from urllib.parse import parse_qs, unquote_plus, urlparse
 
 from wikipedia_template_filler import fill
 from wikipedia_template_filler._http import USER_AGENT
+from wikipedia_template_filler.sources.chemspider import (
+    CHEMSPIDER_API_KEY_ENV,
+    RSC_API_KEY_ENV,
+    chemspider_id_from_inchikey,
+    first_result_id,
+    inchikey_filter_request,
+    query_results_request,
+    rsc_api_key,
+)
 from wikipedia_template_filler.sources.pubchem import (
     SourceLookupError,
     as_list,
     compound_fields,
+    enrich_compound_from_chemspider,
     enrich_compound_from_wikidata,
     fetch_json,
     fetch_pubchem_compound,
@@ -95,6 +105,12 @@ def wikidata_payload() -> dict:
     }
 
 
+def wikidata_payload_without_chemspider() -> dict:
+    payload = wikidata_payload()
+    payload["results"]["bindings"][0].pop("chemspider")
+    return payload
+
+
 def fake_fetcher(url: str) -> dict:
     if url == property_url("2244"):
         return property_payload()
@@ -126,6 +142,65 @@ class PubChemTests(unittest.TestCase):
 
         request = fake_urlopen.call_args.args[0]
         self.assertEqual(request.get_header("User-agent"), USER_AGENT)
+
+    def test_rsc_api_key_prefers_rsc_env_var(self):
+        with mock.patch.dict(
+            "os.environ",
+            {RSC_API_KEY_ENV: "rsc-key", CHEMSPIDER_API_KEY_ENV: "chemspider-key"},
+            clear=True,
+        ):
+            self.assertEqual(rsc_api_key(), "rsc-key")
+
+    def test_rsc_api_key_accepts_chemspider_env_alias(self):
+        with mock.patch.dict("os.environ", {CHEMSPIDER_API_KEY_ENV: "chemspider-key"}, clear=True):
+            self.assertEqual(rsc_api_key(), "chemspider-key")
+
+    def test_chemspider_inchikey_request_uses_api_key_and_shared_user_agent(self):
+        request = inchikey_filter_request("BSYNRYMUTXBXSQ-UHFFFAOYSA-N", api_key="test-rsc-key")
+
+        self.assertEqual(request.full_url, "https://api.rsc.org/compounds/v1/filter/inchikey")
+        self.assertEqual(request.get_method(), "POST")
+        self.assertEqual(request.get_header("Apikey"), "test-rsc-key")
+        self.assertEqual(request.get_header("User-agent"), USER_AGENT)
+        self.assertEqual(request.data, b'{"inchikey": "BSYNRYMUTXBXSQ-UHFFFAOYSA-N"}')
+
+    def test_chemspider_results_request_uses_api_key_and_query_id(self):
+        request = query_results_request("query-123", api_key="test-rsc-key")
+
+        self.assertEqual(request.full_url, "https://api.rsc.org/compounds/v1/filter/query-123/results")
+        self.assertEqual(request.get_method(), "GET")
+        self.assertEqual(request.get_header("Apikey"), "test-rsc-key")
+
+    def test_chemspider_id_from_inchikey_uses_two_step_rsc_lookup(self):
+        urls = []
+
+        def requester(request):
+            urls.append(request.full_url)
+            if request.full_url.endswith("/filter/inchikey"):
+                return {"queryId": "query-123"}
+            return {"results": [2157, 9999], "limitedToMaxAllowed": False}
+
+        with mock.patch.dict("os.environ", {RSC_API_KEY_ENV: "test-rsc-key"}, clear=True):
+            self.assertEqual(
+                chemspider_id_from_inchikey("BSYNRYMUTXBXSQ-UHFFFAOYSA-N", requester=requester),
+                "2157",
+            )
+
+        self.assertEqual(
+            urls,
+            [
+                "https://api.rsc.org/compounds/v1/filter/inchikey",
+                "https://api.rsc.org/compounds/v1/filter/query-123/results",
+            ],
+        )
+
+    def test_chemspider_id_from_inchikey_is_blank_without_api_key(self):
+        with mock.patch.dict("os.environ", {}, clear=True):
+            self.assertEqual(chemspider_id_from_inchikey("BSYNRYMUTXBXSQ-UHFFFAOYSA-N"), "")
+
+    def test_first_result_id_returns_first_chemspider_record(self):
+        self.assertEqual(first_result_id({"results": [2157, 9999]}), "2157")
+        self.assertEqual(first_result_id({"results": []}), "")
 
     def test_parse_helpers(self):
         self.assertEqual(parse_property_response(property_payload(), expected_cid="2244")["MolecularFormula"], "C9H8O4")
@@ -184,6 +259,28 @@ class PubChemTests(unittest.TestCase):
         self.assertEqual(fields["DrugBank"], "DB00945")
         self.assertEqual(fields["ChEBI"], "15365")
         self.assertEqual(fields["ChEMBL"], "25")
+
+    def test_chemspider_enrichment_fills_missing_chemspider_id_from_rsc(self):
+        def fetcher(url: str) -> dict:
+            if url.startswith("https://query.wikidata.org/sparql?"):
+                return wikidata_payload_without_chemspider()
+            return fake_fetcher(url)
+
+        def requester(request):
+            if request.full_url.endswith("/filter/inchikey"):
+                return {"queryId": "query-123"}
+            return {"results": [2157]}
+
+        compound = enrich_compound_from_wikidata(fetch_pubchem_compound("2244", fetcher=fetcher), fetcher=fetcher)
+        with mock.patch.dict("os.environ", {RSC_API_KEY_ENV: "test-rsc-key"}, clear=True):
+            with mock.patch(
+                "wikipedia_template_filler.sources.chemspider.fetch_json_request",
+                side_effect=requester,
+            ):
+                enriched = enrich_compound_from_chemspider(compound)
+
+        self.assertEqual(dict(compound_fields(compound))["ChemSpiderID"], "")
+        self.assertEqual(dict(compound_fields(enriched))["ChemSpiderID"], "2157")
 
     def test_wikidata_enrichment_falls_back_to_inchikey_when_pubchem_cid_misses(self):
         requested_queries = []

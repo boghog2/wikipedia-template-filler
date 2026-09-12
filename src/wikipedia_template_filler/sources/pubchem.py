@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 
 from wikipedia_template_filler._http import USER_AGENT
 from wikipedia_template_filler.api import TemplateFillerError
+from wikipedia_template_filler.sources.chemspider import chemspider_id_from_inchikey
 from wikipedia_template_filler.sources.wikidata import enrich_drug_identifiers
 
 PUBCHEM_PUG_REST_BASE = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
@@ -62,6 +63,7 @@ def fill_pubchem(identifier: str, *, json_fetcher: JsonFetcher | None = None, **
     """Return an Infobox drug template for a PubChem CID."""
     compound = lookup_pubchem_compound(identifier, json_fetcher=json_fetcher)
     compound = enrich_compound_from_wikidata(compound, fetcher=json_fetcher or fetch_json)
+    compound = enrich_compound_from_chemspider(compound)
     return render_drug_template(
         compound,
         add_param_space=bool(options.get("add_param_space", False)),
@@ -182,6 +184,36 @@ def enrich_compound_from_wikidata(compound: PubChemCompound, *, fetcher: JsonFet
         iuphar_ligand=compound.iuphar_ligand or enriched["iuphar_ligand"],
         kegg=compound.kegg,
         unii=compound.unii or enriched["unii"],
+    )
+
+
+def enrich_compound_from_chemspider(compound: PubChemCompound) -> PubChemCompound:
+    """Fill a missing ChemSpider ID from RSC ChemSpider when configured."""
+    if compound.chemspider or not compound.inchikey:
+        return compound
+    try:
+        chemspider_id = chemspider_id_from_inchikey(compound.inchikey)
+    except TemplateFillerError:
+        return compound
+    if not chemspider_id:
+        return compound
+    return PubChemCompound(
+        cid=compound.cid,
+        title=compound.title,
+        molecular_formula=compound.molecular_formula,
+        molecular_weight=compound.molecular_weight,
+        smiles=compound.smiles,
+        inchi=compound.inchi,
+        inchikey=compound.inchikey,
+        iupac_name=compound.iupac_name,
+        cas=compound.cas,
+        chebi=compound.chebi,
+        chembl=compound.chembl,
+        drug_bank=compound.drug_bank,
+        chemspider=chemspider_id,
+        iuphar_ligand=compound.iuphar_ligand,
+        kegg=compound.kegg,
+        unii=compound.unii,
     )
 
 
