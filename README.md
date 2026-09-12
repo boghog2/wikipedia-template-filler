@@ -89,6 +89,15 @@ toolforge webservice python3.13 restart
 toolforge webservice status
 ```
 
+If you have an NCBI E-utilities API key, configure it as Toolforge environment
+variables before restarting the Python webservice. Enter the values at the
+hidden prompts rather than passing secrets as command-line arguments:
+
+```bash
+toolforge envvars create NCBI_API_KEY
+toolforge envvars create NCBI_EMAIL
+```
+
 Deployment sanity checklist:
 
 - Package installs into the active Toolforge virtual environment with `python -m pip install -e .`.
@@ -120,6 +129,10 @@ PubMed and PubMed Central lookup are implemented through NCBI E-utilities:
 wikipedia-template-filler pmid 18535242 --add-param-space
 wikipedia-template-filler pmc 137841 --add-param-space
 ```
+
+If you have an NCBI E-utilities API key, set `NCBI_API_KEY` in the environment
+to include it in PubMed and PubMed Central requests. Set `NCBI_EMAIL` to include
+the contact email associated with the key.
 
 PubChem CID lookup is implemented through PubChem PUG REST and can generate either Infobox drug or the legacy Chembox:
 

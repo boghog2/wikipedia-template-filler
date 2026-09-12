@@ -1,12 +1,17 @@
 import json
+import os
 import unittest
 from unittest import mock
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 from wikipedia_template_filler import fill, web
 from wikipedia_template_filler._http import USER_AGENT
 from wikipedia_template_filler.sources.pubmed import (
+    NCBI_API_KEY_ENV,
+    NCBI_EMAIL_ENV,
+    NCBI_TOOL,
     SourceLookupError,
     article_fields,
     expand_month,
@@ -111,16 +116,33 @@ class PubMedTests(unittest.TestCase):
         self.assertEqual(normalize_pmcid(" 137841 "), "137841")
 
     def test_pubmed_url(self):
-        self.assertEqual(
-            pubmed_url("18535242"),
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=18535242&retmode=xml",
-        )
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(
+                pubmed_url("18535242"),
+                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=18535242&retmode=xml",
+            )
 
     def test_pmc_to_pubmed_url(self):
-        self.assertEqual(
-            pmc_to_pubmed_url("137841"),
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pmc&db=pubmed&id=137841&retmode=xml",
-        )
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(
+                pmc_to_pubmed_url("137841"),
+                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pmc&db=pubmed&id=137841&retmode=xml",
+            )
+
+    def test_ncbi_urls_include_optional_api_key_and_email(self):
+        with mock.patch.dict(
+            os.environ,
+            {NCBI_API_KEY_ENV: "test-api-key", NCBI_EMAIL_ENV: "boghog@example.org"},
+        ):
+            pubmed_query = parse_qs(urlparse(pubmed_url("18535242")).query)
+            pmc_query = parse_qs(urlparse(pmc_to_pubmed_url("137841")).query)
+
+        self.assertEqual(pubmed_query["api_key"], ["test-api-key"])
+        self.assertEqual(pubmed_query["tool"], [NCBI_TOOL])
+        self.assertEqual(pubmed_query["email"], ["boghog@example.org"])
+        self.assertEqual(pmc_query["api_key"], ["test-api-key"])
+        self.assertEqual(pmc_query["tool"], [NCBI_TOOL])
+        self.assertEqual(pmc_query["email"], ["boghog@example.org"])
 
     def test_fetch_xml_sends_shared_user_agent(self):
         response = mock.MagicMock()
