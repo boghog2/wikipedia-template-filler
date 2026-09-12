@@ -148,7 +148,7 @@ def parse_uniprot_response(payload: Mapping[str, Any], *, expected_accession: st
         alt_symbols=", ".join(nested_value(item, "value") for item in as_list(gene.get("synonyms")) if nested_value(item, "value")),
         entrez_gene=first_cross_reference(refs, "GeneID"),
         homologene=first_cross_reference(refs, "HomoloGene"),
-        pdb=", ".join(cross_reference_ids(refs, "PDB")),
+        pdb="+".join(cross_reference_ids(refs, "PDB")),
         refseq_mrna=strip_accession_version(refseq[0]),
         refseq_protein=strip_accession_version(refseq[1]),
         uniprot=accession,

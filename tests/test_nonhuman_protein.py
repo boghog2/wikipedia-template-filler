@@ -134,6 +134,31 @@ class NonhumanProteinTests(unittest.TestCase):
         self.assertEqual(fields["RefSeqProtein"], "NP_851335")
         self.assertEqual(fields["UniProt"], "P02769")
 
+    def test_parse_uniprot_response_joins_multiple_pdb_ids_with_plus(self):
+        payload = uniprot_payload()
+        payload["uniProtKBCrossReferences"] = [
+            ref
+            for ref in payload["uniProtKBCrossReferences"]
+            if ref["database"] != "PDB"
+        ]
+        payload["uniProtKBCrossReferences"].extend(
+            [
+                {"database": "PDB", "id": "1MI6"},
+                {"database": "PDB", "id": "1MVR"},
+                {"database": "PDB", "id": "4GMK"},
+                {"database": "PDB", "id": "4GSB"},
+            ]
+        )
+
+        def fetcher(url: str) -> dict:
+            return ncbi_gene_payload() if url == ncbi_gene_url("280717") else payload
+
+        protein = parse_uniprot_response(payload, expected_accession="P02769")
+        output = fill_uniprot("P02769", json_fetcher=fetcher, add_param_space=True)
+
+        self.assertEqual(dict(nonhuman_protein_fields(protein))["PDB"], "1MI6+1MVR+4GMK+4GSB")
+        self.assertIn("| PDB = 1MI6+1MVR+4GMK+4GSB", output)
+
     def test_parse_ncbi_gene_response(self):
         protein = parse_ncbi_gene_response(ncbi_gene_payload(), expected_gene_id="280717")
         fields = dict(nonhuman_protein_fields(protein))
