@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 import wikipedia_template_filler
+from wikipedia_template_filler._http import USER_AGENT
 from wikipedia_template_filler import (
     TemplateFiller,
     UnknownSourceError,
@@ -20,6 +21,9 @@ from wikipedia_template_filler.cli import SMOKE_CASES, main, run_smoke_cases
 class PackageTests(unittest.TestCase):
     def test_version_is_available(self):
         self.assertEqual(wikipedia_template_filler.__version__, "0.2.0")
+
+    def test_user_agent_uses_package_version(self):
+        self.assertEqual(USER_AGENT, f"wikipedia-template-filler/{wikipedia_template_filler.__version__}")
 
     def test_source_statuses_are_current(self):
         filler = TemplateFiller()

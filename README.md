@@ -82,6 +82,8 @@ git pull
 source $HOME/www/python/venv/bin/activate
 python -m pip install -e .
 python -m pytest
+# If pytest or dev dependencies are unavailable, use the stdlib fallback:
+python3 run_tests.py
 wikipedia-template-filler smoke
 toolforge webservice python3.13 restart
 toolforge webservice status
@@ -90,7 +92,7 @@ toolforge webservice status
 Deployment sanity checklist:
 
 - Package installs into the active Toolforge virtual environment with `python -m pip install -e .`.
-- Unit tests pass with `python -m pytest`.
+- Unit tests pass with `python -m pytest`, or `python3 run_tests.py` when dev dependencies are unavailable.
 - Live upstream checks pass with `wikipedia-template-filler smoke`.
 - The root page, fill route, and legacy CGI route return HTML: `/`, `/fill`, and `/cgi-bin/index.cgi`.
 - `format=xml` URLs return `application/xml`, for example `/cgi-bin/index.cgi?type=pubmed_id&id=18535242&format=xml`.
