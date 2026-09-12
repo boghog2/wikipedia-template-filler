@@ -93,6 +93,29 @@ class WebAppTests(unittest.TestCase):
         positions = [page.index(label) for label in expected]
         self.assertEqual(positions, sorted(positions))
 
+    def test_render_page_includes_nonhuman_protein_dropdown_options(self):
+        page = web.render_page()
+        self.assertIn(
+            '<option value="uniprot">UniProt accession -&gt; Infobox nonhuman protein</option>',
+            page,
+        )
+        self.assertIn(
+            '<option value="gene">NCBI Gene ID -&gt; Infobox nonhuman protein</option>',
+            page,
+        )
+
+    def test_render_page_selects_nonhuman_protein_dropdown_options(self):
+        uniprot_page = web.render_page(source_type="uniprot_id", identifier="P02769")
+        gene_page = web.render_page(source_type="gene", identifier="280717")
+        self.assertIn(
+            '<option value="uniprot" selected>UniProt accession -&gt; Infobox nonhuman protein</option>',
+            uniprot_page,
+        )
+        self.assertIn(
+            '<option value="gene" selected>NCBI Gene ID -&gt; Infobox nonhuman protein</option>',
+            gene_page,
+        )
+
 
     def test_render_page_orders_options_like_perl_form(self):
         page = web.render_page(option_values={"add_ref_tag": True, "link_journal": True})
