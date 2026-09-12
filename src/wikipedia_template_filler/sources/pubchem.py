@@ -11,6 +11,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
+from wikipedia_template_filler._http import USER_AGENT
 from wikipedia_template_filler.api import TemplateFillerError
 
 PUBCHEM_PUG_REST_BASE = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
@@ -103,7 +104,7 @@ def xrefs_url(cid: str) -> str:
 
 
 def fetch_json(url: str) -> Mapping[str, Any]:
-    request = Request(url, headers={"User-Agent": "wikipedia-template-filler/0.2.0"})
+    request = Request(url, headers={"User-Agent": USER_AGENT})
     try:
         with urlopen(request, timeout=10) as response:
             return json.loads(response.read().decode("utf-8"))

@@ -11,6 +11,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
+from wikipedia_template_filler._http import USER_AGENT
 from wikipedia_template_filler.api import TemplateFillerError
 from wikipedia_template_filler.renderer import render_template
 
@@ -63,7 +64,7 @@ def fetch_openlibrary_book(isbn: str, *, fetcher: JsonFetcher | None = None) -> 
 
 def fetch_json(url: str) -> Mapping[str, Any]:
     """Fetch JSON from *url* using the standard library."""
-    request = Request(url, headers={"User-Agent": "wikipedia-template-filler/0.2.0"})
+    request = Request(url, headers={"User-Agent": USER_AGENT})
     try:
         with urlopen(request, timeout=10) as response:
             return json.loads(response.read().decode("utf-8"))

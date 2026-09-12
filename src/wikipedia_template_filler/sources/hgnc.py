@@ -10,6 +10,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
+from wikipedia_template_filler._http import USER_AGENT
 from wikipedia_template_filler.api import TemplateFillerError
 from wikipedia_template_filler.renderer import render_template
 
@@ -70,7 +71,7 @@ def hgnc_url(hgnc_id: str) -> str:
 
 def fetch_json(url: str) -> str:
     """Fetch JSON from url using the standard library."""
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "wikipedia-template-filler/0.2.0"})
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": USER_AGENT})
     try:
         with urlopen(request, timeout=10) as response:
             return response.read().decode("utf-8")
