@@ -548,6 +548,7 @@ def fill_request(
     params: dict[str, list[str]],
     *,
     fill_func: Callable[..., str] | None = None,
+    show_missing_identifier_error: bool = True,
 ) -> FillResult:
     """Apply query parameters and return a fill result for HTML or XML."""
     source_type = query_value(params, "source_type", "type", default="pmid")
@@ -556,9 +557,9 @@ def fill_request(
     output = ""
     error = ""
 
-    if not identifier:
+    if not identifier and show_missing_identifier_error:
         error = "Enter an identifier."
-    else:
+    elif identifier:
         try:
             live_fill = fill if fill_func is None else fill_func
             output = live_fill(
@@ -584,9 +585,14 @@ def render_fill_page(
     params: dict[str, list[str]],
     *,
     fill_func: Callable[..., str] | None = None,
+    show_missing_identifier_error: bool = True,
 ) -> str:
     """Render the filled-template page for web and WSGI entry points."""
-    result = fill_request(params, fill_func=fill_func)
+    result = fill_request(
+        params,
+        fill_func=fill_func,
+        show_missing_identifier_error=show_missing_identifier_error,
+    )
     return render_page(
         source_type=result.source_type,
         identifier=result.identifier,
@@ -657,12 +663,12 @@ def make_handler() -> type[BaseHTTPRequestHandler]:
                 elif parsed.path == "/" and not params:
                     self.respond_html(render_page())
                 else:
-                    self.handle_fill(params)
+                    self.handle_fill(params, show_missing_identifier_error=parsed.path == "/fill")
                 return
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
-        def handle_fill(self, params: dict[str, list[str]]) -> None:
-            self.respond_html(render_fill_page(params))
+        def handle_fill(self, params: dict[str, list[str]], *, show_missing_identifier_error: bool) -> None:
+            self.respond_html(render_fill_page(params, show_missing_identifier_error=show_missing_identifier_error))
 
         def respond_html(self, body: str) -> None:
             self.respond(body, "text/html; charset=utf-8")

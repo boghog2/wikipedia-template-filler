@@ -35,7 +35,7 @@ def app(environ: dict[str, object], start_response: Callable[..., object]) -> It
     if path == "/" and not params:
         body = render_page()
     else:
-        body = render_fill_page(params)
+        body = render_fill_page(params, show_missing_identifier_error=path == "/fill")
     return respond(start_response, HTTPStatus.OK, body, method)
 
 

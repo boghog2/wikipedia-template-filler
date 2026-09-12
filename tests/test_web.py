@@ -193,6 +193,12 @@ class WebAppTests(unittest.TestCase):
         body = self.fetch("/fill?source_type=pmid")
         self.assertIn("Enter an identifier.", body)
 
+    def test_legacy_cgi_empty_identifier_renders_blank_form_without_error(self):
+        body = self.fetch("/cgi-bin/index.cgi?ddb=&type=pubmed_id&id=&add_param_space=1&add_ref_tag=1&full_journal_title=1")
+        self.assertIn("Wikipedia Template Filler", body)
+        self.assertIn('option value="pubmed_id" selected', body)
+        self.assertNotIn("Enter an identifier.", body)
+
     def test_legacy_query_names_fill_from_root_path(self):
         body = self.fetch(
             "/?ddb=&type=pubmed_id&id=18535242&add_param_space=1&add_ref_tag=1&full_journal_title=1",

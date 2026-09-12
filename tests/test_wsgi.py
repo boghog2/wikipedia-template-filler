@@ -44,6 +44,16 @@ class WsgiAppTests(unittest.TestCase):
         self.assertEqual(status, "200 OK")
         self.assertIn("Enter an identifier.", body)
 
+    def test_legacy_cgi_empty_identifier_renders_blank_form_without_error(self):
+        status, headers, body = self.call_app(
+            "/cgi-bin/index.cgi",
+            "ddb=&type=pubmed_id&id=&add_param_space=1&add_ref_tag=1&full_journal_title=1",
+        )
+        self.assertEqual(status, "200 OK")
+        self.assertIn("Wikipedia Template Filler", body)
+        self.assertIn('option value="pubmed_id" selected', body)
+        self.assertNotIn("Enter an identifier.", body)
+
     def test_legacy_cgi_url_renders_xml(self):
         with mock.patch("wikipedia_template_filler.web.fill", return_value="{{cite journal}}") as fake_fill:
             status, headers, body = self.call_app(
