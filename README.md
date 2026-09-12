@@ -147,9 +147,10 @@ HGNC lookup is implemented through the public genenames.org REST API:
 wikipedia-template-filler hgnc HGNC:1582 --add-param-space
 ```
 
-Non-human protein lookup is implemented through UniProtKB and NCBI Gene. UniProt
-input uses NCBI Gene cross-references when available to fill genomic location
-fields:
+Non-human protein lookup is implemented through UniProtKB and NCBI Gene. Both
+input paths generate `{{Infobox nonhuman protein}}` output, and each path uses
+the other source when cross-references are available so the protein identity and
+genomic location fields stay in sync. For bovine serum albumin:
 
 ```bash
 wikipedia-template-filler uniprot P02769 --add-param-space --extended
