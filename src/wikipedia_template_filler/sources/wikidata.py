@@ -23,9 +23,15 @@ def enrich_drug_identifiers(
     enriched = dict(identifiers)
     if not pubchem_cid and not inchikey:
         return enriched
-    wikidata_identifiers = parse_drug_identifier_response(
-        fetcher(drug_identifier_url(pubchem_cid=pubchem_cid, inchikey=inchikey))
-    )
+    wikidata_identifiers = {}
+    if pubchem_cid:
+        wikidata_identifiers = parse_drug_identifier_response(
+            fetcher(drug_identifier_url(pubchem_cid=pubchem_cid))
+        )
+    if inchikey and not any(wikidata_identifiers.values()):
+        wikidata_identifiers = parse_drug_identifier_response(
+            fetcher(drug_identifier_url(inchikey=inchikey))
+        )
     for key, value in wikidata_identifiers.items():
         if value and not enriched.get(key):
             enriched[key] = value

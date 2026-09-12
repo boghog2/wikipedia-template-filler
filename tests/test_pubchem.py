@@ -27,6 +27,7 @@ from wikipedia_template_filler.sources.pubchem import (
 )
 from wikipedia_template_filler.sources.wikidata import (
     drug_identifier_url,
+    enrich_drug_identifiers,
     parse_drug_identifier_response,
 )
 
@@ -183,6 +184,30 @@ class PubChemTests(unittest.TestCase):
         self.assertEqual(fields["DrugBank"], "DB00945")
         self.assertEqual(fields["ChEBI"], "15365")
         self.assertEqual(fields["ChEMBL"], "25")
+
+    def test_wikidata_enrichment_falls_back_to_inchikey_when_pubchem_cid_misses(self):
+        requested_queries = []
+
+        def fetcher(url: str) -> dict:
+            query = unquote_plus(parse_qs(urlparse(url).query)["query"][0])
+            requested_queries.append(query)
+            if 'wdt:P235 "BSYNRYMUTXBXSQ-UHFFFAOYSA-N"' in query:
+                return wikidata_payload()
+            return {"results": {"bindings": []}}
+
+        identifiers = enrich_drug_identifiers(
+            {"pubchem": "2244", "inchikey": "BSYNRYMUTXBXSQ-UHFFFAOYSA-N"},
+            pubchem_cid="2244",
+            inchikey="BSYNRYMUTXBXSQ-UHFFFAOYSA-N",
+            fetcher=fetcher,
+        )
+
+        self.assertIn('wdt:P662 "2244"', requested_queries[0])
+        self.assertNotIn('wdt:P235 "BSYNRYMUTXBXSQ-UHFFFAOYSA-N"', requested_queries[0])
+        self.assertIn('wdt:P235 "BSYNRYMUTXBXSQ-UHFFFAOYSA-N"', requested_queries[1])
+        self.assertNotIn('wdt:P662 "2244"', requested_queries[1])
+        self.assertEqual(identifiers["chemspider"], "2157")
+        self.assertEqual(identifiers["iuphar_ligand"], "4139")
 
     def test_fetch_pubchem_compound_fields(self):
         compound = fetch_pubchem_compound("2244", fetcher=fake_fetcher)
