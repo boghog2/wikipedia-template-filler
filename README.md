@@ -20,6 +20,12 @@ Run tests:
 pytest
 ```
 
+From a fresh checkout without installing the package or dev dependencies, run:
+
+```bash
+python3 run_tests.py
+```
+
 Run live smoke checks against supported upstream sources before deployment:
 
 ```bash
