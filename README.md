@@ -34,6 +34,10 @@ wikipedia-template-filler smoke
 python3 scripts/smoke_supported_sources.py
 ```
 
+These smoke checks call live upstream APIs, so failures can reflect rate limits,
+temporary service issues, or changed source records rather than a local code
+regression.
+
 Check old Toolforge-style URLs against a running web app before deployment:
 
 ```bash
@@ -121,7 +125,7 @@ Deployment sanity checklist:
 
 - Package installs into the active Toolforge virtual environment with `python -m pip install -e .`.
 - Unit tests pass with `python -m pytest`, or `python3 run_tests.py` when dev dependencies are unavailable.
-- Live upstream checks pass with `wikipedia-template-filler smoke`.
+- Live upstream checks pass with `wikipedia-template-filler smoke`, allowing for temporary API rate limits or changed source records.
 - The root page, fill route, and legacy CGI route return HTML: `/`, `/fill`, and `/cgi-bin/index.cgi`.
 - `format=xml` URLs return `application/xml`, for example `/cgi-bin/index.cgi?type=pubmed_id&id=18535242&format=xml`.
 - `toolforge webservice status` reports the restarted service as running.
