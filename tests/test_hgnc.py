@@ -1,10 +1,13 @@
 import json
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from wikipedia_template_filler import fill
+from wikipedia_template_filler._http import USER_AGENT
 from wikipedia_template_filler.sources.hgnc import (
     SourceLookupError,
+    fetch_json,
     fill_hgnc,
     first_value,
     gene_fields,
@@ -56,6 +59,16 @@ class HgncTests(unittest.TestCase):
 
     def test_hgnc_url(self):
         self.assertEqual(hgnc_url("1582"), "https://rest.genenames.org/fetch/hgnc_id/HGNC%3A1582")
+
+    def test_fetch_json_sends_shared_user_agent(self):
+        response = mock.MagicMock()
+        response.read.return_value = b"{}"
+        with mock.patch("wikipedia_template_filler.sources.hgnc.urlopen") as fake_urlopen:
+            fake_urlopen.return_value.__enter__.return_value = response
+            fetch_json(hgnc_url("1582"))
+
+        request = fake_urlopen.call_args.args[0]
+        self.assertEqual(request.get_header("User-agent"), USER_AGENT)
 
     def test_format_helpers(self):
         self.assertEqual(first_value(["P24385"]), "P24385")

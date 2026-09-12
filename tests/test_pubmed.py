@@ -5,10 +5,12 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from wikipedia_template_filler import fill, web
+from wikipedia_template_filler._http import USER_AGENT
 from wikipedia_template_filler.sources.pubmed import (
     SourceLookupError,
     article_fields,
     expand_month,
+    fetch_xml,
     fill_pmc,
     fill_pubmed,
     normalize_pages,
@@ -119,6 +121,16 @@ class PubMedTests(unittest.TestCase):
             pmc_to_pubmed_url("137841"),
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pmc&db=pubmed&id=137841&retmode=xml",
         )
+
+    def test_fetch_xml_sends_shared_user_agent(self):
+        response = mock.MagicMock()
+        response.read.return_value = b"<xml/>"
+        with mock.patch("wikipedia_template_filler.sources.pubmed.urlopen") as fake_urlopen:
+            fake_urlopen.return_value.__enter__.return_value = response
+            fetch_xml(pubmed_url("18535242"))
+
+        request = fake_urlopen.call_args.args[0]
+        self.assertEqual(request.get_header("User-agent"), USER_AGENT)
 
     def test_format_helpers(self):
         self.assertEqual(expand_month("Jun"), "June")

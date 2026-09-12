@@ -1,10 +1,13 @@
 import unittest
+from unittest import mock
 
 from wikipedia_template_filler import fill
+from wikipedia_template_filler._http import USER_AGENT
 from wikipedia_template_filler.sources.pubchem import (
     SourceLookupError,
     as_list,
     compound_fields,
+    fetch_json,
     fetch_pubchem_compound,
     fill_pubchem,
     fill_pubchem_chembox,
@@ -85,6 +88,16 @@ class PubChemTests(unittest.TestCase):
         self.assertEqual(property_url("2244").split("/compound/cid/2244/", 1)[1], "property/MolecularFormula,MolecularWeight,IsomericSMILES,CanonicalSMILES,ConnectivitySMILES,SMILES,InChI,InChIKey,IUPACName/JSON")
         self.assertEqual(synonyms_url("2244"), "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/2244/synonyms/JSON")
         self.assertEqual(xrefs_url("2244"), "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/2244/xrefs/RegistryID,SourceName/JSON")
+
+    def test_fetch_json_sends_shared_user_agent(self):
+        response = mock.MagicMock()
+        response.read.return_value = b"{}"
+        with mock.patch("wikipedia_template_filler.sources.pubchem.urlopen") as fake_urlopen:
+            fake_urlopen.return_value.__enter__.return_value = response
+            fetch_json(property_url("2244"))
+
+        request = fake_urlopen.call_args.args[0]
+        self.assertEqual(request.get_header("User-agent"), USER_AGENT)
 
     def test_parse_helpers(self):
         self.assertEqual(parse_property_response(property_payload(), expected_cid="2244")["MolecularFormula"], "C9H8O4")

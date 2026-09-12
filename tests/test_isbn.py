@@ -4,10 +4,12 @@ from unittest import mock
 from pathlib import Path
 
 from wikipedia_template_filler import fill
+from wikipedia_template_filler._http import USER_AGENT
 from wikipedia_template_filler.sources.isbn import (
     SourceLookupError,
     book_fields,
     book_url,
+    fetch_json,
     fetch_openlibrary_book,
     fill_isbn,
     first_identifier,
@@ -37,6 +39,16 @@ class IsbnTests(unittest.TestCase):
             openlibrary_url("0721659446"),
             "https://openlibrary.org/api/books?bibkeys=ISBN:0721659446&format=json&jscmd=data",
         )
+
+    def test_fetch_json_sends_shared_user_agent(self):
+        response = mock.MagicMock()
+        response.read.return_value = b"{}"
+        with mock.patch("wikipedia_template_filler.sources.isbn.urlopen") as fake_urlopen:
+            fake_urlopen.return_value.__enter__.return_value = response
+            fetch_json(openlibrary_url("0721659446"))
+
+        request = fake_urlopen.call_args.args[0]
+        self.assertEqual(request.get_header("User-agent"), USER_AGENT)
 
     def test_vancouver_name(self):
         self.assertEqual(vancouver_name("Arthur C. Guyton"), "Guyton AC")
