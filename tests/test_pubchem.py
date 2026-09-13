@@ -343,6 +343,7 @@ class PubChemTests(unittest.TestCase):
         self.assertIn("| ChemSpiderID            = 2157", output)
         self.assertIn("| C = 9 | H = 8 | O = 4", output)
         self.assertIn("| StdInChIKey             = BSYNRYMUTXBXSQ-UHFFFAOYSA-N", output)
+        self.assertNotIn("tolerance_potential", output)
 
     def test_fill_pubchem_chembox_suppresses_empty_fields_by_default(self):
         output = fill_pubchem_chembox("CID:2244", json_fetcher=fake_fetcher)

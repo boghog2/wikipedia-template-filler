@@ -341,7 +341,7 @@ DRUG_TEMPLATE_LINES = (
     "imageR", "image_classR", "widthR", "altR", "captionLR",
     "<!-- Clinical data -->",
     "pronounce", "tradename", "Drugs.com", "MedlinePlus", "licence_CA", "licence_EU", "DailyMedID", "licence_US",
-    "pregnancy_AU", "pregnancy_AU_comment", "pregnancy_category", "tolerance_potential", "dependency_liability",
+    "pregnancy_AU", "pregnancy_AU_comment", "pregnancy_category", "dependency_liability",
     "addiction_liability", "routes_of_administration", "class", "ATCvet", "ATC_prefix", "ATC_suffix", "ATC_supplemental",
     "<!-- Legal status -->",
     "legal_AU", "legal_AU_comment", "legal_BR", "legal_BR_comment", "legal_CA", "legal_CA_comment", "legal_DE",
