@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
@@ -14,6 +14,11 @@ from urllib.request import Request, urlopen
 from wikipedia_template_filler._http import USER_AGENT
 from wikipedia_template_filler.api import TemplateFillerError
 from wikipedia_template_filler.sources.chemspider import chemspider_id_from_inchikey
+from wikipedia_template_filler.sources.guide_to_pharmacology import (
+    GuideToPharmacologyLookupError,
+    JsonRequester as GtoPdbRequester,
+    guide_to_pharmacology_ligand_id,
+)
 from wikipedia_template_filler.sources.wikidata import enrich_drug_identifiers
 
 PUBCHEM_PUG_REST_BASE = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
@@ -63,12 +68,37 @@ def fill_pubchem(identifier: str, *, json_fetcher: JsonFetcher | None = None, **
     """Return an Infobox drug template for a PubChem CID."""
     compound = lookup_pubchem_compound(identifier, json_fetcher=json_fetcher)
     compound = enrich_compound_from_wikidata(compound, fetcher=json_fetcher or fetch_json)
+    compound = enrich_compound_from_guide_to_pharmacology(
+        compound,
+        requester=options.get("gtopdb_requester"),
+    )
     compound = enrich_compound_from_chemspider(compound)
     return render_drug_template(
         compound,
         add_param_space=bool(options.get("add_param_space", False)),
         include_empty=bool(options.get("extended", False)),
     )
+
+
+def enrich_compound_from_guide_to_pharmacology(
+    compound: PubChemCompound,
+    *,
+    requester: GtoPdbRequester | None = None,
+) -> PubChemCompound:
+    """Fill a missing IUPHAR ligand ID from the authoritative GtoPdb API."""
+    if compound.iuphar_ligand:
+        return compound
+    try:
+        ligand_id = guide_to_pharmacology_ligand_id(
+            pubchem_cid=compound.cid,
+            inchikey=compound.inchikey,
+            requester=requester,
+        )
+    except GuideToPharmacologyLookupError:
+        # Optional enrichment must not block the core PubChem template during
+        # an upstream outage or authentication change.
+        return compound
+    return replace(compound, iuphar_ligand=ligand_id) if ligand_id else compound
 
 
 def fill_pubchem_chembox(identifier: str, *, json_fetcher: JsonFetcher | None = None, **options: object) -> str:

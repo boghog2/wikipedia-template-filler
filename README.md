@@ -129,6 +129,16 @@ InChIKey lookup. `CHEMSPIDER_API_KEY` is also accepted as an alias:
 toolforge envvars create RSC_API_KEY
 ```
 
+Guide to Pharmacology (GtoPdb) is used as the authoritative fallback for a
+missing `IUPHAR_ligand` value when generating `{{Infobox drug}}`. The lookup
+first uses the PubChem CID and then the InChIKey. GtoPdb is moving its REST API
+to registered access; configure an issued key as `GTP_API_KEY` (the
+`GTPDB_API_KEY` alias is also accepted):
+
+```bash
+toolforge envvars create GTP_API_KEY
+```
+
 Deployment sanity checklist:
 
 - Package installs into the active Toolforge virtual environment with `python -m pip install -e .`.
@@ -174,7 +184,9 @@ wikipedia-template-filler chembox 2244
 
 `{{Infobox drug}}` output is enriched from Wikidata when possible. If
 `RSC_API_KEY` or `CHEMSPIDER_API_KEY` is set, a missing `ChemSpiderID` can also
-be filled through the RSC ChemSpider API using the compound InChIKey.
+be filled through the RSC ChemSpider API using the compound InChIKey. If
+Wikidata does not supply `IUPHAR_ligand`, the Guide to Pharmacology REST API is
+queried directly by PubChem CID and then by InChIKey.
 
 HGNC lookup is implemented through the public genenames.org REST API:
 
