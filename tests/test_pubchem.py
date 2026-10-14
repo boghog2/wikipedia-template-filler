@@ -330,6 +330,7 @@ class PubChemTests(unittest.TestCase):
         self.assertIn("|ChEBI=15365", output)
         self.assertIn("|ChemSpiderID=2157", output)
         self.assertIn("| C=9 | H=8 | O=4", output)
+        self.assertNotIn("|molecular_weight=", output)
         self.assertNotIn("|Ag=", output)
         self.assertNotIn("|charge=", output)
         self.assertIn("|StdInChIKey=BSYNRYMUTXBXSQ-UHFFFAOYSA-N", output)
@@ -342,6 +343,8 @@ class PubChemTests(unittest.TestCase):
         self.assertIn("| IUPHAR_ligand           = 4139", output)
         self.assertIn("| ChemSpiderID            = 2157", output)
         self.assertIn("| C = 9 | H = 8 | O = 4", output)
+        self.assertIn("| molecular_weight        = ", output)
+        self.assertNotIn("| molecular_weight        = 180.16", output)
         self.assertIn("| StdInChIKey             = BSYNRYMUTXBXSQ-UHFFFAOYSA-N", output)
         self.assertNotIn("tolerance_potential", output)
 

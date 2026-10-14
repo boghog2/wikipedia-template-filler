@@ -559,7 +559,7 @@ def drug_template_values(compound: PubChemCompound) -> dict[str, str]:
             "ChEMBL": compound.chembl,
             "IUPAC_name": f"<nowiki>{compound.iupac_name}</nowiki>" if compound.iupac_name else "",
             "chemical_formula": "" if any(elements.values()) else compound.molecular_formula,
-            "molecular_weight": compound.molecular_weight,
+            "molecular_weight": "" if any(elements.values()) else compound.molecular_weight,
             "SMILES": compound.smiles,
             "StdInChI": compound.inchi,
             "StdInChIKey": compound.inchikey,
