@@ -496,7 +496,7 @@ def result_block(output: str) -> str:
     escaped = html.escape(output)
     return f"""<section class="result">
     <p class="paste-label">Paste this into your article:</p>
-    <textarea id="output" readonly>{escaped}</textarea>
+    <textarea id="output">{escaped}</textarea>
     <div class="copy-row"><button class="secondary" type="button" data-copy-output>Copy</button></div>
   </section>"""
 

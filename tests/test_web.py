@@ -136,6 +136,11 @@ class WebAppTests(unittest.TestCase):
         self.assertLess(page.index("Paste this into your article:"), page.index('<form method="get" action="/">'))
         self.assertLess(page.index('<textarea id="output"'), page.index('<form method="get" action="/">'))
 
+    def test_render_page_output_box_is_editable(self):
+        page = web.render_page(output="{{cite journal}}")
+        self.assertIn('<textarea id="output">', page)
+        self.assertNotIn('<textarea id="output" readonly>', page)
+
     def test_render_page_aligns_copy_button_with_output_box(self):
         page = web.render_page(output="{{cite journal}}")
         self.assertIn(".copy-row {", page)
