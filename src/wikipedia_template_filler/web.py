@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import html
+import re
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -552,6 +553,26 @@ def should_add_ref_tag(output: str, requested: bool) -> bool:
     return requested and output.lstrip().lower().startswith("{{cite ")
 
 
+def ref_tag_name(output: str, *, source_type: str, identifier: str) -> str:
+    """Return a stable ref name for cite output when a PMID is available."""
+    match = re.search(r"(?:^|\|)\s*pmid\s*=\s*(\d+)", output, flags=re.IGNORECASE)
+    if match:
+        return f"pmid{match.group(1)}"
+    if TemplateFiller().source_spec(source_type).source_type == "pubmed_id":
+        pmid = re.sub(r"\D", "", identifier)
+        if pmid:
+            return f"pmid{pmid}"
+    return ""
+
+
+def wrap_ref_tag(output: str, *, source_type: str, identifier: str) -> str:
+    """Wrap cite output in a ref tag, adding a PMID-derived name when possible."""
+    name = ref_tag_name(output, source_type=source_type, identifier=identifier)
+    if name:
+        return f'<ref name = "{name}">{output}</ref>'
+    return f"<ref>{output}</ref>"
+
+
 def fill_request(
     params: dict[str, list[str]],
     *,
@@ -576,7 +597,7 @@ def fill_request(
                 **options,
             )
             if should_add_ref_tag(output, options["add_ref_tag"]):
-                output = f"<ref>{output}</ref>"
+                output = wrap_ref_tag(output, source_type=source_type, identifier=identifier)
         except TemplateFillerError as exc:
             error = str(exc)
 

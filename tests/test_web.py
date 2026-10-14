@@ -215,7 +215,17 @@ class WebAppTests(unittest.TestCase):
             "/fill?source_type=pmid&identifier=18535242&add_ref_tag=1",
             fill_result="{{cite journal}}",
         )
-        self.assertIn("&lt;ref&gt;{{cite journal}}&lt;/ref&gt;", body)
+        self.assertIn("&lt;ref name = &quot;pmid18535242&quot;&gt;{{cite journal}}&lt;/ref&gt;", body)
+
+    def test_fill_route_uses_citation_pmid_for_ref_tag_name(self):
+        body = self.fetch(
+            "/fill?source_type=pmc&identifier=PMC137841&add_ref_tag=1",
+            fill_result="{{cite journal|pmid=123455}}",
+        )
+        self.assertIn(
+            "&lt;ref name = &quot;pmid123455&quot;&gt;{{cite journal|pmid=123455}}&lt;/ref&gt;",
+            body,
+        )
 
     def test_fill_route_does_not_add_ref_tag_to_infoboxes(self):
         body = self.fetch(
@@ -224,6 +234,12 @@ class WebAppTests(unittest.TestCase):
         )
         self.assertIn("{{infobox protein}}", body)
         self.assertNotIn("&lt;ref&gt;{{infobox protein}}&lt;/ref&gt;", body)
+
+    def test_ref_tag_name_reads_spaced_pmid_parameter(self):
+        self.assertEqual(
+            web.ref_tag_name("{{cite journal | pmid = 123455 }}", source_type="pmc", identifier="PMC137841"),
+            "pmid123455",
+        )
 
     def test_fill_route_renders_missing_identifier_error(self):
         body = self.fetch("/fill?source_type=pmid")
